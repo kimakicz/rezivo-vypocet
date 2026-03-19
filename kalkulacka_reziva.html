@@ -301,10 +301,15 @@ function showToast(msg, duration = 3500) {
 //  AVAILABILITY CHECK
 // ═══════════════════════════════════════════════════
 // Vrací: 'ok' | 'no' | null (null = materiál bez sizes = bez kontroly)
+function normWH(row) {
+  const a = parseFloat(row.w) || 0;
+  const b = parseFloat(row.h) || 0;
+  return { w: Math.min(a, b), h: Math.max(a, b) };
+}
+
 function checkAvailability(row, mat) {
   if (!mat?.sizes?.length) return null;
-  const w = parseFloat(row.w) || 0;
-  const h = parseFloat(row.h) || 0;
+  const { w, h } = normWH(row);
   const l = parseFloat(row.l) || 0;
   if (w === 0 && h === 0 && l === 0) return null;  // prázdný řádek
   const match = mat.sizes.find(s => s.w === w && s.h === h);
@@ -316,17 +321,16 @@ function checkAvailability(row, mat) {
 // Vrací text hintu pro avail-no řádek
 function getAvailHint(row, mat) {
   if (!mat?.sizes?.length) return '';
-  const w = parseFloat(row.w) || 0;
-  const h = parseFloat(row.h) || 0;
+  const { w, h } = normWH(row);
   const l = parseFloat(row.l) || 0;
 
   const match = mat.sizes.find(s => s.w === w && s.h === h);
   if (match) {
     // Průřez existuje, ale délka je špatná
-    return `Délky pro ${w}×${h}: ${match.lengths.map(x => x + ' m').join(', ')}`;
+    return `Délky ${w}×${h} cm: ${match.lengths.map(x => x + ' m').join(', ')}`;
   }
 
-  // Průřez neexistuje – najdi 3 nejbližší (Euklid. vzdálenost)
+  // Průřez neexistuje – najdi 3 nejbližší (Euklid. vzdálenost, normalizovaně)
   const nearest = [...mat.sizes]
     .map(s => ({ s, d: Math.hypot(s.w - w, s.h - h) }))
     .sort((a, b) => a.d - b.d)
