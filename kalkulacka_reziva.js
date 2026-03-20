@@ -103,6 +103,11 @@ function getDph() {
   return parseFloat(document.getElementById("dphInput").value) || 21;
 }
 
+// Parses a number accepting both comma and period as decimal separator.
+function parseDecimal(s) {
+  return parseFloat(String(s ?? "").replace(",", ".")) || 0;
+}
+
 function fmt(n, dec = 0) {
   return n.toLocaleString("cs-CZ", {
     minimumFractionDigits: dec,
@@ -132,15 +137,15 @@ function showToast(msg, duration = 3500) {
 // ═══════════════════════════════════════════════════
 // Vrací: 'ok' | 'no' | null (null = materiál bez sizes = bez kontroly)
 function normWH(row) {
-  const a = parseFloat(row.w) || 0;
-  const b = parseFloat(row.h) || 0;
+  const a = parseDecimal(row.w);
+  const b = parseDecimal(row.h);
   return { w: Math.min(a, b), h: Math.max(a, b) };
 }
 
 function checkAvailability(row, mat) {
   if (!mat?.sizes?.length) return null;
   const { w, h } = normWH(row);
-  const l = parseFloat(row.l) || 0;
+  const l = parseDecimal(row.l);
   if (w === 0 && h === 0 && l === 0) return null; // prázdný řádek
   const match = mat.sizes.find((s) => s.w === w && s.h === h);
   if (!match) return "no";
@@ -152,7 +157,7 @@ function checkAvailability(row, mat) {
 function getAvailHint(row, mat) {
   if (!mat?.sizes?.length) return "";
   const { w, h } = normWH(row);
-  const l = parseFloat(row.l) || 0;
+  const l = parseDecimal(row.l);
 
   const match = mat.sizes.find((s) => s.w === w && s.h === h);
   if (match) {
@@ -173,10 +178,10 @@ function getAvailHint(row, mat) {
 //  CALCULATION
 // ═══════════════════════════════════════════════════
 function calcRow(row) {
-  const w = parseFloat(row.w) || 0;
-  const h = parseFloat(row.h) || 0;
-  const l = parseFloat(row.l) || 0;
-  const n = parseFloat(row.n) || 0;
+  const w = parseDecimal(row.w);
+  const h = parseDecimal(row.h);
+  const l = parseDecimal(row.l);
+  const n = parseDecimal(row.n);
   const m3 = (w / 100) * (h / 100) * l * n;
   const mat = getMaterial();
   const dph = getDph() / 100;
@@ -254,19 +259,26 @@ function renderRow(row) {
   tr.dataset.id = row.id;
 
   const specs = [
-    { key: "w", placeholder: "0", step: "0.5", min: "0" },
-    { key: "h", placeholder: "0", step: "0.5", min: "0" },
-    { key: "l", placeholder: "0.00", step: "0.01", min: "0" },
-    { key: "n", placeholder: "1", step: "1", min: "0" },
+    { key: "w", placeholder: "0", type: "text", inputmode: "decimal" },
+    { key: "h", placeholder: "0", type: "text", inputmode: "decimal" },
+    { key: "l", placeholder: "0,00", type: "text", inputmode: "decimal" },
+    { key: "n", placeholder: "1", type: "number", step: "1", min: "0", inputmode: "numeric" },
   ];
 
   specs.forEach((s) => {
     const td = document.createElement("td");
     const input = document.createElement("input");
-    input.type = "number";
-    input.min = s.min;
-    input.step = s.step;
+    input.type = s.type;
+    if (s.min !== undefined) input.min = s.min;
+    if (s.step !== undefined) input.step = s.step;
     input.placeholder = s.placeholder;
+    input.inputMode = s.inputmode;
+    if (s.type === "text") {
+      input.autocomplete = "off";
+      input.autocorrect = "off";
+      input.autocapitalize = "off";
+      input.spellcheck = false;
+    }
     input.value = row[s.key];
     input.dataset.field = s.key;
     input.dataset.rowId = row.id;
@@ -667,10 +679,10 @@ function buildEmailText() {
     .map((row) => {
       const c = calcRow(row);
       let r = [
-        pad(parseFloat(row.w) || 0, 9),
-        pad(parseFloat(row.h) || 0, 9),
-        pad(parseFloat(row.l) || 0, 8),
-        pad(parseFloat(row.n) || 0, 7),
+        pad(parseDecimal(row.w), 9),
+        pad(parseDecimal(row.h), 9),
+        pad(parseDecimal(row.l), 8),
+        pad(parseDecimal(row.n), 7),
         pad(fmtM3(c.m3), 10),
         pad(fmtKc(c.priceNoDph), 13),
         pad(fmtKc(c.priceWithDph), 12),
@@ -746,12 +758,12 @@ function buildQuoteEmailText() {
   const dph = getDph() / 100;
 
   const lines = rows
-    .filter((r) => (parseFloat(r.w) || 0) > 0 && (parseFloat(r.n) || 0) > 0)
+    .filter((r) => parseDecimal(r.w) > 0 && parseDecimal(r.n) > 0)
     .map((r) => {
-      const w = parseFloat(r.w) || 0;
-      const h = parseFloat(r.h) || 0;
-      const l = parseFloat(r.l) || 0;
-      const n = parseFloat(r.n) || 0;
+      const w = parseDecimal(r.w);
+      const h = parseDecimal(r.h);
+      const l = parseDecimal(r.l);
+      const n = parseDecimal(r.n);
       const m3 = (w / 100) * (h / 100) * l * n;
       const price = Math.round(m3 * mat.price * (1 + dph));
       const lCm = Math.round(l * 100);
@@ -760,10 +772,10 @@ function buildQuoteEmailText() {
 
   const total = rows.reduce((s, r) => {
     const m3 =
-      ((parseFloat(r.w) || 0) / 100) *
-      ((parseFloat(r.h) || 0) / 100) *
-      (parseFloat(r.l) || 0) *
-      (parseFloat(r.n) || 0);
+      (parseDecimal(r.w) / 100) *
+      (parseDecimal(r.h) / 100) *
+      parseDecimal(r.l) *
+      parseDecimal(r.n);
     return s + m3 * mat.price * (1 + dph);
   }, 0);
 
