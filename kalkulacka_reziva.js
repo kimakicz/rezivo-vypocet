@@ -698,7 +698,7 @@ function exportPDF() {
     </div>`;
 
   const html = `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:11px;color:#111;background:#fff;">
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:11px;color:#111;background:#fff;color-scheme:light;">
 
       <!-- Header -->
       <div style="display:flex;align-items:baseline;gap:10px;padding:8px 0 8px;border-bottom:1px solid #ccc;margin-bottom:0;">
@@ -746,7 +746,7 @@ function exportPDF() {
   html2pdf().from(html).set({
     margin: [10, 10, 10, 10],
     filename,
-    html2canvas: { scale: 2, useCORS: true },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
   }).save();
 }
