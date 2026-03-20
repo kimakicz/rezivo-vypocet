@@ -652,23 +652,6 @@ function exportPDF() {
   const inclWght = weightIncluded();
   const dateStr = new Date().toLocaleDateString("cs-CZ");
 
-  // Build table rows
-  const rowsHtml = rows.map((row) => {
-    const c = calcRow(row);
-    const w = parseDecimal(row.w);
-    const h = parseDecimal(row.h);
-    const l = parseDecimal(row.l);
-    const n = parseDecimal(row.n);
-    if (w === 0 && h === 0 && l === 0 && n === 0) return "";
-    const td = (v, bold) =>
-      `<td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:right;${bold ? "font-weight:600;" : ""}">${v}</td>`;
-    return `<tr>
-      ${td(fmt(w, 1))}${td(fmt(h, 1))}${td(fmt(l, 2))}${td(fmt(n, 0))}
-      ${td(fmtM3(c.m3))}${td(fmtKc(c.priceNoDph))}${td(fmtKc(c.priceWithDph))}
-      ${inclWght ? td(fmtKg(c.weight)) : ""}
-    </tr>`;
-  }).join("");
-
   // Summary totals
   let totM3 = 0, totNoDph = 0, totWithDph = 0, totKg = 0;
   rows.forEach((row) => {
@@ -677,32 +660,79 @@ function exportPDF() {
     totWithDph += c.priceWithDph; totKg += c.weight;
   });
 
-  const th = (label) =>
-    `<th style="padding:5px 8px;background:#f0f0f0;border-bottom:2px solid #ccc;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#555;">${label}</th>`;
-  const tfTd = (v) =>
-    `<td style="padding:5px 8px;text-align:right;font-weight:700;border-top:2px solid #1d6f42;">${v}</td>`;
+  // Styles matching the app's @media print CSS
+  const S = {
+    th: "padding:6px 8px;background:#f0f0f0;border-bottom:1px solid #ccc;text-align:right;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#666;font-weight:600;white-space:nowrap;",
+    td: "padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-size:11px;color:#333;white-space:nowrap;",
+    tdInput: "padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-size:11px;color:#111;white-space:nowrap;",
+    tfTd: "padding:5px 8px;text-align:right;font-size:12px;font-weight:700;color:#111;border-top:2px solid #1d6f42;",
+  };
+
+  const th = (label) => `<th style="${S.th}">${label}</th>`;
+  const tfTd = (v) => `<td style="${S.tfTd}">${v}</td>`;
+
+  const rowsHtml = rows.map((row) => {
+    const c = calcRow(row);
+    const w = parseDecimal(row.w);
+    const h = parseDecimal(row.h);
+    const l = parseDecimal(row.l);
+    const n = parseDecimal(row.n);
+    if (w === 0 && h === 0 && l === 0 && n === 0) return "";
+    return `<tr>
+      <td style="${S.tdInput}">${fmt(w, 1)}</td>
+      <td style="${S.tdInput}">${fmt(h, 1)}</td>
+      <td style="${S.tdInput}">${fmt(l, 2)}</td>
+      <td style="${S.tdInput}">${fmt(n, 0)}</td>
+      <td style="${S.td}">${fmtM3(c.m3)}</td>
+      <td style="${S.td}">${fmtKc(c.priceNoDph)}</td>
+      <td style="${S.td}">${fmtKc(c.priceWithDph)}</td>
+      ${inclWght ? `<td style="${S.td}">${fmtKg(c.weight)}</td>` : ""}
+    </tr>`;
+  }).join("");
+
+  // Stat bar items matching the screen layout
+  const statItem = (lbl, val, accent) => `
+    <div style="display:inline-block;padding:6px 16px 6px 0;margin-right:16px;${accent ? "border-left:3px solid #1d6f42;padding-left:10px;" : "border-right:1px solid #e0e0e0;"}">
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#999;font-weight:600;">${lbl}</div>
+      <div style="font-size:13px;font-weight:700;color:#111;">${val}</div>
+    </div>`;
 
   const html = `
-    <div style="font-family:Arial,sans-serif;font-size:11px;color:#111;padding:0;">
-      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px;border-bottom:1px solid #ccc;padding-bottom:8px;">
-        <span style="font-size:15px;font-weight:700;">Kalkulačka řeziva</span>
-        <span style="font-size:10px;color:#888;">kubatura · ceny · hmotnost</span>
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:11px;color:#111;background:#fff;">
+
+      <!-- Header -->
+      <div style="display:flex;align-items:baseline;gap:10px;padding:8px 0 8px;border-bottom:1px solid #ccc;margin-bottom:0;">
+        <span style="font-size:14px;font-weight:700;letter-spacing:-.01em;">Kalkulačka řeziva</span>
+        <span style="font-size:11px;color:#999;">kubatura · ceny · hmotnost</span>
       </div>
-      <div style="font-size:10px;color:#555;margin-bottom:12px;display:flex;gap:20px;">
-        <span><strong>Materiál:</strong> ${escHtml(mat?.name ?? "")}</span>
-        <span><strong>Cena/m³ bez DPH:</strong> ${fmt(mat?.price ?? 0)} Kč</span>
-        <span><strong>DPH:</strong> ${dph} %</span>
-        <span><strong>Datum:</strong> ${dateStr}</span>
+
+      <!-- Stat bar -->
+      <div style="padding:6px 0;border-bottom:1px solid #ccc;margin-bottom:6px;">
+        ${statItem("Cena za m³ bez DPH", fmt(mat?.price ?? 0) + "\u00a0Kč", false)}
+        ${statItem("Celkem m³", fmtM3(totM3), false)}
+        ${statItem("Celkem bez DPH", fmtKc(totNoDph), false)}
+        ${inclWght ? statItem("Celková hmotnost", fmtKg(totKg), false) : ""}
+        ${statItem("Celkem s DPH", fmtKc(totWithDph), true)}
       </div>
-      <table style="width:100%;border-collapse:collapse;font-size:11px;">
-        <thead><tr>
-          ${th("Šířka [cm]")}${th("Výška [cm]")}${th("Délka [m]")}${th("Počet [ks]")}
-          ${th("m³")}${th("Bez DPH")}${th("S DPH")}
-          ${inclWght ? th("Hmotnost [kg]") : ""}
+
+      <!-- Print meta -->
+      <div style="font-size:10px;color:#444;margin-bottom:8px;">
+        <strong>Materiál:</strong> ${escHtml(mat?.name ?? "")} &emsp;
+        <strong>Cena za m³ bez DPH:</strong> ${fmt(mat?.price ?? 0)} Kč &emsp;
+        <strong>DPH:</strong> ${dph} % &emsp;
+        <strong>Datum:</strong> ${dateStr}
+      </div>
+
+      <!-- Table -->
+      <table style="width:100%;border-collapse:collapse;">
+        <thead><tr style="background:#f8f8f8;">
+          ${th("šířka [cm]")}${th("výška [cm]")}${th("délka [m]")}${th("počet [ks]")}
+          ${th("m³")}${th("bez daně")}${th("s daní")}
+          ${inclWght ? th("hmotnost [kg]") : ""}
         </tr></thead>
         <tbody>${rowsHtml}</tbody>
         <tfoot><tr>
-          <td colspan="4" style="padding:5px 8px;font-weight:700;border-top:2px solid #1d6f42;">Celkem</td>
+          <td colspan="4" style="padding:5px 8px;font-weight:700;font-size:11px;border-top:2px solid #1d6f42;">Celkem</td>
           ${tfTd(fmtM3(totM3))}${tfTd(fmtKc(totNoDph))}${tfTd(fmtKc(totWithDph))}
           ${inclWght ? tfTd(fmtKg(totKg)) : ""}
         </tr></tfoot>
@@ -712,7 +742,7 @@ function exportPDF() {
   const filename = `kalkulacka-reziva-${dateStr.replace(/\./g, "-")}.pdf`;
 
   html2pdf().from(html).set({
-    margin: 12,
+    margin: [10, 10, 10, 10],
     filename,
     html2canvas: { scale: 2, useCORS: true },
     jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
