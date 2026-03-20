@@ -716,11 +716,13 @@ function exportPDF() {
       </div>
 
       <!-- Print meta -->
-      <div style="font-size:10px;color:#444;margin-bottom:8px;">
-        <strong>Materiál:</strong> ${escHtml(mat?.name ?? "")} &emsp;
-        <strong>Cena za m³ bez DPH:</strong> ${fmt(mat?.price ?? 0)} Kč &emsp;
-        <strong>DPH:</strong> ${dph} % &emsp;
-        <strong>Datum:</strong> ${dateStr}
+      <div style="margin-bottom:10px;">
+        <div style="font-size:16px;font-weight:700;color:#1d6f42;letter-spacing:-.01em;margin-bottom:4px;">${escHtml(mat?.name ?? "")}</div>
+        <div style="font-size:10px;color:#666;">
+          <strong style="color:#444;">Cena za m³ bez DPH:</strong> ${fmt(mat?.price ?? 0)} Kč &emsp;
+          <strong style="color:#444;">DPH:</strong> ${dph} % &emsp;
+          <strong style="color:#444;">Datum:</strong> ${dateStr}
+        </div>
       </div>
 
       <!-- Table -->
