@@ -648,18 +648,75 @@ function weightIncluded() {
 // ═══════════════════════════════════════════════════
 function exportPDF() {
   const mat = getMaterial();
-  document.getElementById("printMaterial").textContent = mat?.name ?? "";
-  document.getElementById("printPrice").textContent = fmt(mat?.price ?? 0);
-  document.getElementById("printDph").textContent = getDph();
-  document.getElementById("printDate").textContent =
-    new Date().toLocaleDateString("cs-CZ");
+  const dph = getDph();
+  const inclWght = weightIncluded();
+  const dateStr = new Date().toLocaleDateString("cs-CZ");
 
-  const hideWeight = !weightIncluded();
-  if (hideWeight) document.body.classList.add("hide-weight");
+  // Build table rows
+  const rowsHtml = rows.map((row) => {
+    const c = calcRow(row);
+    const w = parseDecimal(row.w);
+    const h = parseDecimal(row.h);
+    const l = parseDecimal(row.l);
+    const n = parseDecimal(row.n);
+    if (w === 0 && h === 0 && l === 0 && n === 0) return "";
+    const td = (v, bold) =>
+      `<td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:right;${bold ? "font-weight:600;" : ""}">${v}</td>`;
+    return `<tr>
+      ${td(fmt(w, 1))}${td(fmt(h, 1))}${td(fmt(l, 2))}${td(fmt(n, 0))}
+      ${td(fmtM3(c.m3))}${td(fmtKc(c.priceNoDph))}${td(fmtKc(c.priceWithDph))}
+      ${inclWght ? td(fmtKg(c.weight)) : ""}
+    </tr>`;
+  }).join("");
 
-  window.print();
+  // Summary totals
+  let totM3 = 0, totNoDph = 0, totWithDph = 0, totKg = 0;
+  rows.forEach((row) => {
+    const c = calcRow(row);
+    totM3 += c.m3; totNoDph += c.priceNoDph;
+    totWithDph += c.priceWithDph; totKg += c.weight;
+  });
 
-  if (hideWeight) document.body.classList.remove("hide-weight");
+  const th = (label) =>
+    `<th style="padding:5px 8px;background:#f0f0f0;border-bottom:2px solid #ccc;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#555;">${label}</th>`;
+  const tfTd = (v) =>
+    `<td style="padding:5px 8px;text-align:right;font-weight:700;border-top:2px solid #1d6f42;">${v}</td>`;
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;font-size:11px;color:#111;padding:0;">
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px;border-bottom:1px solid #ccc;padding-bottom:8px;">
+        <span style="font-size:15px;font-weight:700;">Kalkulačka řeziva</span>
+        <span style="font-size:10px;color:#888;">kubatura · ceny · hmotnost</span>
+      </div>
+      <div style="font-size:10px;color:#555;margin-bottom:12px;display:flex;gap:20px;">
+        <span><strong>Materiál:</strong> ${escHtml(mat?.name ?? "")}</span>
+        <span><strong>Cena/m³ bez DPH:</strong> ${fmt(mat?.price ?? 0)} Kč</span>
+        <span><strong>DPH:</strong> ${dph} %</span>
+        <span><strong>Datum:</strong> ${dateStr}</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead><tr>
+          ${th("Šířka [cm]")}${th("Výška [cm]")}${th("Délka [m]")}${th("Počet [ks]")}
+          ${th("m³")}${th("Bez DPH")}${th("S DPH")}
+          ${inclWght ? th("Hmotnost [kg]") : ""}
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+        <tfoot><tr>
+          <td colspan="4" style="padding:5px 8px;font-weight:700;border-top:2px solid #1d6f42;">Celkem</td>
+          ${tfTd(fmtM3(totM3))}${tfTd(fmtKc(totNoDph))}${tfTd(fmtKc(totWithDph))}
+          ${inclWght ? tfTd(fmtKg(totKg)) : ""}
+        </tr></tfoot>
+      </table>
+    </div>`;
+
+  const filename = `kalkulacka-reziva-${dateStr.replace(/\./g, "-")}.pdf`;
+
+  html2pdf().from(html).set({
+    margin: 12,
+    filename,
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
+  }).save();
 }
 
 // ═══════════════════════════════════════════════════
