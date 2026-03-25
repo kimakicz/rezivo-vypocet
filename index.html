@@ -106,6 +106,7 @@
         <div class="container">
             <!-- ── Print metadata ── -->
             <div class="print-meta print-only">
+                <div id="printZakaz" style="font-size:13px;font-weight:600;margin-bottom:4px;"></div>
                 <strong>Materiál:</strong>
                 <span id="printMaterial"></span>&emsp;
                 <strong>Cena za m³ bez DPH:</strong>
@@ -114,15 +115,29 @@
                 <span id="printDate"></span>
             </div>
 
+            <!-- ── Zakázka / poznámka ── -->
+            <div class="zakaz-row no-print">
+                <label class="zakaz-label" for="zakazInput">Zakázka / zákazník</label>
+                <input
+                    type="text"
+                    id="zakazInput"
+                    class="zakaz-input"
+                    placeholder="Název zákazníka nebo popis zakázky…"
+                    oninput="onZakazChange()"
+                    autocomplete="off"
+                />
+            </div>
+
             <!-- ── Table ── -->
             <div class="table-wrapper">
-                <table>
+                <table id="mainTable">
                     <thead>
                         <tr>
                             <th>šířka [cm]</th>
                             <th>výška [cm]</th>
                             <th>délka [m]</th>
                             <th>počet [ks]</th>
+                            <th class="col-price no-print" title="Vlastní cena Kč/m³ pro tento řádek – přepíše výchozí cenu materiálu">vl. cena</th>
                             <th>m³</th>
                             <th>bez daně</th>
                             <th>s daní</th>
@@ -152,9 +167,18 @@
                 <button class="btn-action" onclick="openEmailModal()">
                     ✉ Email / Nabídka
                 </button>
+                <button class="btn-action" onclick="saveToHistory()">
+                    💾 Uložit
+                </button>
+                <button class="btn-action" onclick="openHistoryModal()">
+                    📋 Historie
+                </button>
                 <label class="export-opt">
                     <input type="checkbox" id="chkWeight" checked /> Zahrnout
                     hmotnost
+                </label>
+                <label class="export-opt" title="Zobrazí sloupec pro zadání vlastní ceny Kč/m³ na každý řádek">
+                    <input type="checkbox" id="chkDetailedPrices" onchange="toggleDetailedPrices()" /> Vlastní cena na řádek
                 </label>
             </div>
         </div>
@@ -329,6 +353,26 @@
                         ✉ Otevřít v emailu
                     </button>
                     <button class="btn-primary" onclick="closeEmailModal()">
+                        Zavřít
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Modal: Historie výpočtů ── -->
+        <div
+            class="modal-overlay"
+            id="historyModalOverlay"
+            onclick="closeHistoryModalOutside(event)"
+        >
+            <div class="modal modal-history">
+                <h2>Historie výpočtů</h2>
+                <ul class="history-list" id="historyList"></ul>
+                <div class="modal-footer history-modal-footer">
+                    <button class="btn-danger" onclick="clearHistory()">
+                        Smazat vše
+                    </button>
+                    <button class="btn-primary" onclick="closeHistoryModal()">
                         Zavřít
                     </button>
                 </div>

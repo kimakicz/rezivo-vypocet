@@ -65,6 +65,7 @@ let selectedMatId = materials[0]?.id ?? 1;
 let rows = []; // { id, w, h, l, n }
 let nextRowId = 1;
 let nextMatId = Math.max(...materials.map((m) => m.id)) + 1;
+let calcHistory = [];
 
 // ═══════════════════════════════════════════════════
 //  PERSISTENCE
@@ -133,6 +134,27 @@ function showToast(msg, duration = 3500) {
 }
 
 // ═══════════════════════════════════════════════════
+//  ZAKÁZKA (poznámka k zakázce)
+// ═══════════════════════════════════════════════════
+function getZakaz() {
+  return document.getElementById("zakazInput")?.value.trim() ?? "";
+}
+
+function onZakazChange() {
+  localStorage.setItem("rezivo_zakaz", getZakaz());
+  const el = document.getElementById("printZakaz");
+  if (el) el.textContent = getZakaz();
+}
+
+function initZakaz() {
+  const saved = localStorage.getItem("rezivo_zakaz") ?? "";
+  const inp = document.getElementById("zakazInput");
+  if (inp) inp.value = saved;
+  const el = document.getElementById("printZakaz");
+  if (el) el.textContent = saved;
+}
+
+// ═══════════════════════════════════════════════════
 //  AVAILABILITY CHECK
 // ═══════════════════════════════════════════════════
 // Vrací: 'ok' | 'no' | null (null = materiál bez sizes = bez kontroly)
@@ -185,10 +207,11 @@ function calcRow(row) {
   const m3 = (w / 100) * (h / 100) * l * n;
   const mat = getMaterial();
   const dph = getDph() / 100;
+  const price = parseDecimal(row.price) || mat.price;
   return {
     m3,
-    priceNoDph: m3 * mat.price,
-    priceWithDph: m3 * mat.price * (1 + dph),
+    priceNoDph: m3 * price,
+    priceWithDph: m3 * price * (1 + dph),
     weight: m3 * mat.density,
   };
 }
@@ -219,6 +242,7 @@ function syncMaterialInputs() {
 function onMaterialChange() {
   selectedMatId = parseInt(document.getElementById("materialSelect").value, 10);
   syncMaterialInputs();
+  updatePriceInputPlaceholders();
   recalcAll();
 }
 
@@ -227,6 +251,7 @@ function onPriceChange() {
   if (!mat) return;
   mat.price = parseFloat(document.getElementById("priceInput").value) || 0;
   saveMaterials();
+  updatePriceInputPlaceholders();
   recalcAll();
 }
 
@@ -245,7 +270,7 @@ const FIELDS = ["w", "h", "l", "n"];
 
 function addRow(w = "", h = "", l = "", n = "") {
   const id = nextRowId++;
-  rows.push({ id, w, h, l, n });
+  rows.push({ id, w, h, l, n, price: null });
   renderRow(rows[rows.length - 1]);
   updateTabIndexes();
   recalcSummary();
@@ -293,6 +318,32 @@ function renderRow(row) {
     td.appendChild(input);
     tr.appendChild(td);
   });
+
+  // Price override input (col-price – visible only in detailed-prices mode)
+  {
+    const mat = getMaterial();
+    const tdPrice = document.createElement("td");
+    tdPrice.className = "col-price no-print";
+    const priceInp = document.createElement("input");
+    priceInp.type = "text";
+    priceInp.inputMode = "numeric";
+    priceInp.placeholder = fmt(mat.price);
+    priceInp.autocomplete = "off";
+    priceInp.autocorrect = "off";
+    priceInp.autocapitalize = "off";
+    priceInp.spellcheck = false;
+    priceInp.value = row.price ?? "";
+    priceInp.dataset.field = "price";
+    priceInp.dataset.rowId = row.id;
+    priceInp.className = "input-price-override";
+    priceInp.addEventListener("input", () => {
+      row.price = priceInp.value;
+      updateRowCalc(row);
+      recalcSummary();
+    });
+    tdPrice.appendChild(priceInp);
+    tr.appendChild(tdPrice);
+  }
 
   // Calculated cells
   const calcDefs = [
@@ -362,6 +413,12 @@ function updateRowCalc(row) {
   // Hint buňka
   const tdH = tr.querySelector(".td-hint");
   if (tdH) tdH.textContent = hint;
+
+  // Vizuální označení řádku s vlastní cenou
+  tr.classList.toggle(
+    "has-price-override",
+    row.price !== null && row.price !== undefined && String(row.price).trim() !== ""
+  );
 }
 
 function deleteRow(id) {
@@ -643,6 +700,23 @@ function weightIncluded() {
   return document.getElementById("chkWeight").checked;
 }
 
+function detailedPrices() {
+  return document.getElementById("chkDetailedPrices").checked;
+}
+
+function toggleDetailedPrices() {
+  const on = detailedPrices();
+  document.getElementById("mainTable").classList.toggle("detailed-prices", on);
+  updatePriceInputPlaceholders();
+}
+
+function updatePriceInputPlaceholders() {
+  const mat = getMaterial();
+  document.querySelectorAll(".input-price-override").forEach((inp) => {
+    inp.placeholder = fmt(mat.price);
+  });
+}
+
 // ═══════════════════════════════════════════════════
 //  EXPORT: PRINT / PDF
 // ═══════════════════════════════════════════════════
@@ -651,6 +725,7 @@ function exportPDF() {
   const dph = getDph();
   const inclWght = weightIncluded();
   const dateStr = new Date().toLocaleDateString("cs-CZ");
+  const zakaz = getZakaz();
 
   // Summary totals
   let totM3 = 0, totNoDph = 0, totWithDph = 0, totKg = 0;
@@ -717,6 +792,7 @@ function exportPDF() {
 
       <!-- Print meta -->
       <div style="margin-bottom:10px;">
+        ${zakaz ? `<div style="font-size:13px;font-weight:600;color:#333;margin-bottom:3px;">${escHtml(zakaz)}</div>` : ""}
         <div style="font-size:16px;font-weight:700;color:#1d6f42;letter-spacing:-.01em;margin-bottom:4px;">${escHtml(mat?.name ?? "")}</div>
         <div style="font-size:10px;color:#666;">
           <strong style="color:#444;">Cena za m³ bez DPH:</strong> ${fmt(mat?.price ?? 0)} Kč &emsp;
@@ -743,6 +819,7 @@ function exportPDF() {
 
   const filename = `kalkulacka-reziva-${dateStr.replace(/\./g, "-")}.pdf`;
 
+  saveToHistory(true);
   html2pdf().from(html).set({
     margin: [10, 10, 10, 10],
     filename,
@@ -802,6 +879,7 @@ function buildEmailText() {
 }
 
 function openEmailModal() {
+  saveToHistory(true);
   const overlay = document.getElementById("emailModalOverlay");
   overlay.classList.add("open");
   document.getElementById("emailFormat").value = "quote";
@@ -889,20 +967,13 @@ function buildQuoteEmailText() {
       const h = parseDecimal(r.h);
       const l = parseDecimal(r.l);
       const n = parseDecimal(r.n);
-      const m3 = (w / 100) * (h / 100) * l * n;
-      const price = Math.round(m3 * mat.price * (1 + dph));
+      const c = calcRow(r);
+      const price = Math.round(c.priceWithDph);
       const lCm = Math.round(l * 100);
       return `${label} ${w} x ${h} x ${lCm} cm - ${n} ks - ${fmt(price)},- Kč vč. DPH`;
     });
 
-  const total = rows.reduce((s, r) => {
-    const m3 =
-      (parseDecimal(r.w) / 100) *
-      (parseDecimal(r.h) / 100) *
-      parseDecimal(r.l) *
-      parseDecimal(r.n);
-    return s + m3 * mat.price * (1 + dph);
-  }, 0);
+  const total = rows.reduce((s, r) => s + calcRow(r).priceWithDph, 0);
 
   return [
     "Dobrý den,",
@@ -914,6 +985,133 @@ function buildQuoteEmailText() {
   ].join("\n");
 }
 
+
+// ═══════════════════════════════════════════════════
+//  HISTORY (historie výpočtů)
+// ═══════════════════════════════════════════════════
+const HISTORY_MAX = 20;
+const HISTORY_KEY = "rezivo_history";
+
+function loadHistory() {
+  try {
+    const s = localStorage.getItem(HISTORY_KEY);
+    if (s) return JSON.parse(s);
+  } catch (_) {}
+  return [];
+}
+
+function persistHistory() {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(calcHistory));
+}
+
+function saveToHistory(silent = false) {
+  if (!rows.length) {
+    if (!silent) showToast("Nic k uložení.");
+    return;
+  }
+  const mat = getMaterial();
+  let totM3 = 0, totWithDph = 0;
+  rows.forEach((row) => {
+    const c = calcRow(row);
+    totM3 += c.m3;
+    totWithDph += c.priceWithDph;
+  });
+
+  const entry = {
+    id: Date.now(),
+    savedAt: new Date().toLocaleString("cs-CZ"),
+    note: getZakaz(),
+    materialName: mat?.name ?? "",
+    materialPrice: mat?.price ?? 0,
+    dph: getDph(),
+    totM3,
+    totWithDph,
+    rows: JSON.parse(JSON.stringify(rows)),
+  };
+
+  calcHistory.unshift(entry);
+  if (calcHistory.length > HISTORY_MAX) calcHistory = calcHistory.slice(0, HISTORY_MAX);
+  persistHistory();
+  if (!silent) showToast("Výpočet uložen do historie.");
+}
+
+function openHistoryModal() {
+  renderHistoryList();
+  document.getElementById("historyModalOverlay").classList.add("open");
+}
+
+function closeHistoryModal() {
+  document.getElementById("historyModalOverlay").classList.remove("open");
+}
+
+function closeHistoryModalOutside(e) {
+  if (e.target === document.getElementById("historyModalOverlay")) closeHistoryModal();
+}
+
+function renderHistoryList() {
+  const ul = document.getElementById("historyList");
+  ul.innerHTML = "";
+  if (!calcHistory.length) {
+    ul.innerHTML = '<li class="history-empty">Žádné uložené výpočty.</li>';
+    return;
+  }
+  calcHistory.forEach((entry) => {
+    const li = document.createElement("li");
+    li.className = "history-item";
+    li.innerHTML = `
+      <div class="history-item-meta">
+        <span class="history-date">${escHtml(entry.savedAt)}</span>
+        ${entry.note ? `<span class="history-note">${escHtml(entry.note)}</span>` : ""}
+      </div>
+      <div class="history-item-detail">
+        <span class="history-material">${escHtml(entry.materialName)}</span>
+        <span class="history-totals">${fmtM3(entry.totM3)} &middot; ${fmtKc(entry.totWithDph)} s&nbsp;DPH</span>
+      </div>
+      <div class="history-item-actions">
+        <button class="btn-action history-btn-restore" onclick="restoreFromHistory(${entry.id})">Načíst</button>
+        <button class="btn-del history-btn-del" onclick="deleteFromHistory(${entry.id})" title="Smazat záznam">×</button>
+      </div>
+    `;
+    ul.appendChild(li);
+  });
+}
+
+function restoreFromHistory(id) {
+  const entry = calcHistory.find((e) => e.id === id);
+  if (!entry) return;
+  const label = entry.note || entry.savedAt;
+  if (!confirm(`Načíst výpočet „${label}"?\nAktuální tabulka bude přepsána.`)) return;
+
+  rows = JSON.parse(JSON.stringify(entry.rows));
+  nextRowId = Math.max(0, ...rows.map((r) => r.id)) + 1;
+  document.getElementById("tableBody").innerHTML = "";
+  rows.forEach((row) => renderRow(row));
+  updateTabIndexes();
+
+  const inp = document.getElementById("zakazInput");
+  if (inp) {
+    inp.value = entry.note ?? "";
+    onZakazChange();
+  }
+
+  recalcAll();
+  updatePriceInputPlaceholders();
+  closeHistoryModal();
+  showToast("Výpočet načten z historie.");
+}
+
+function deleteFromHistory(id) {
+  calcHistory = calcHistory.filter((e) => e.id !== id);
+  persistHistory();
+  renderHistoryList();
+}
+
+function clearHistory() {
+  if (!confirm("Opravdu smazat celou historii výpočtů?")) return;
+  calcHistory = [];
+  persistHistory();
+  renderHistoryList();
+}
 
 // ═══════════════════════════════════════════════════
 //  DARK MODE
@@ -943,7 +1141,9 @@ function initTheme() {
 //  INIT
 // ═══════════════════════════════════════════════════
 (function init() {
+  calcHistory = loadHistory();
   initTheme();
+  initZakaz();
   renderMaterialSelect();
   addRow();
   recalcSummary();

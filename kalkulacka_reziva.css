@@ -614,6 +614,27 @@ tbody td input.avail-no {
   box-shadow: inset 0 0 0 1px rgba(248, 113, 113, .45);
 }
 
+/* ── Sloupec vlastní ceny Kč/m³ (podrobné ceny) ──── */
+.col-price { display: none; }
+#mainTable.detailed-prices .col-price { display: table-cell; }
+
+.input-price-override {
+  width: 72px !important;
+  min-width: unset !important;
+  text-align: right;
+}
+
+/* Zvýraznění inputu s nastavenou vlastní cenou */
+.input-price-override:not(:placeholder-shown) {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Řádek s vlastní cenou – jemný levý akcent */
+tbody tr.has-price-override {
+  border-left: 3px solid var(--accent);
+}
+
 /* ── Hint buňka (nejbližší dostupné rozměry) ─────── */
 .col-hint { width: 0; padding: 0; }
 
@@ -710,6 +731,125 @@ tbody td input.avail-no {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent-focus);
 }
+
+/* ── Zakázka / poznámka ──────────────────────────── */
+.zakaz-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  margin-top: 4px;
+}
+
+.zakaz-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.zakaz-input {
+  flex: 1;
+  max-width: 480px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.zakaz-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-focus);
+}
+
+/* ── Historie výpočtů ────────────────────────────── */
+.modal-history { width: 600px; }
+
+.history-list {
+  list-style: none;
+  margin: 0 0 4px;
+  padding: 0;
+  max-height: 52vh;
+  overflow-y: auto;
+}
+
+.history-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 13px;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.history-item:last-child { border-bottom: none; }
+
+.history-item-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 130px;
+  flex-shrink: 0;
+}
+
+.history-date {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.history-note {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.history-item-detail {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.history-material {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.history-totals {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.history-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.history-btn-restore { font-size: 12px; padding: 4px 10px; }
+.history-btn-del     { font-size: 15px; padding: 2px 6px; }
+
+.history-modal-footer { justify-content: space-between; }
 
 /* ── Print ───────────────────────────────────────── */
 .print-only { display: none; }
@@ -833,6 +973,16 @@ tbody td input.avail-no {
   /* Sizes add-form in modal */
   .add-size-form { flex-wrap: wrap; }
   .add-size-form input { flex: 1 1 80px; width: auto !important; }
+
+  /* Zakázka */
+  .zakaz-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .zakaz-input { max-width: 100%; width: 100%; }
+
+  /* Historie */
+  .modal-history { width: 100%; }
+  .history-item { flex-wrap: wrap; gap: 6px; }
+  .history-item-meta { min-width: 0; flex: 1 1 100%; }
+  .history-note { max-width: 100%; }
 }
 
 /* ── Responsive: small phone (≤ 420px) ──────────── */
