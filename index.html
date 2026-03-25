@@ -149,11 +149,8 @@
                 <button class="btn-action" onclick="exportPDF()">
                     ⬇ Stáhnout PDF
                 </button>
-                <button class="btn-action" onclick="sendEmail()">
-                    Odeslat emailem
-                </button>
-                <button class="btn-action" onclick="sendQuoteEmail()">
-                    📋 Cenová nabídka
+                <button class="btn-action" onclick="openEmailModal()">
+                    ✉ Email / Nabídka
                 </button>
                 <label class="export-opt">
                     <input type="checkbox" id="chkWeight" checked /> Zahrnout
@@ -294,6 +291,44 @@
 
                 <div class="modal-footer">
                     <button class="btn-primary" onclick="closeModal()">
+                        Zavřít
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Modal: Email / Cenová nabídka ── -->
+        <div
+            class="modal-overlay"
+            id="emailModalOverlay"
+            onclick="closeEmailModalOutside(event)"
+        >
+            <div class="modal" id="emailModal">
+                <h2>Email / Cenová nabídka</h2>
+
+                <div class="email-format-row">
+                    <label for="emailFormat">Formát:</label>
+                    <select id="emailFormat" onchange="onEmailFormatChange()">
+                        <option value="quote">Cenová nabídka</option>
+                        <option value="calc">Kalkulace</option>
+                    </select>
+                </div>
+
+                <textarea
+                    id="emailText"
+                    class="email-textarea"
+                    readonly
+                ></textarea>
+
+                <div class="modal-footer email-modal-footer">
+                    <span class="copy-status" id="copyStatus"></span>
+                    <button class="btn-action" id="btnCopy" onclick="copyEmailText()">
+                        📋 Kopírovat
+                    </button>
+                    <button class="btn-action" id="btnMailto" onclick="openEmailMailto()">
+                        ✉ Otevřít v emailu
+                    </button>
+                    <button class="btn-primary" onclick="closeEmailModal()">
                         Zavřít
                     </button>
                 </div>

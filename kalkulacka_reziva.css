@@ -554,6 +554,48 @@ tbody td.td-del {
   border-top: 1px solid var(--border);
 }
 
+/* ── Email modal ─────────────────────────────────── */
+.email-format-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.email-format-row label { font-size: 13px; font-weight: 600; }
+.email-format-row select { font-size: 13px; padding: 4px 8px; }
+
+.email-textarea {
+  width: 100%;
+  height: 200px;
+  resize: vertical;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  box-sizing: border-box;
+}
+
+.email-modal-footer {
+  align-items: center;
+  gap: 8px;
+}
+
+.copy-status {
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 600;
+  flex: 1;
+}
+
+.btn-copied {
+  background: var(--accent) !important;
+  color: #fff !important;
+}
+
 /* ── Dostupnost rozměrů (avail-ok / avail-no) ───── */
 tbody td input.avail-ok {
   background: rgba(29, 111, 66, .08) !important;

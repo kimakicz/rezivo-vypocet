@@ -801,40 +801,76 @@ function buildEmailText() {
   );
 }
 
-function sendEmail() {
+function openEmailModal() {
+  const overlay = document.getElementById("emailModalOverlay");
+  overlay.classList.add("open");
+  document.getElementById("emailFormat").value = "quote";
+  const text = buildQuoteEmailText();
+  document.getElementById("emailText").value = text;
+  updateMailtoButton(text);
+  autoClipboard(text);
+}
+
+function onEmailFormatChange() {
+  const format = document.getElementById("emailFormat").value;
+  const text = format === "quote" ? buildQuoteEmailText() : buildEmailText();
+  document.getElementById("emailText").value = text;
+  updateMailtoButton(text);
+  autoClipboard(text);
+}
+
+function autoClipboard(text) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast("Zkopírováno do schránky.");
+    });
+  }
+}
+
+function copyEmailText() {
+  const text = document.getElementById("emailText").value;
+  const btn = document.getElementById("btnCopy");
+  const status = document.getElementById("copyStatus");
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.classList.add("btn-copied");
+      status.textContent = "✓ Zkopírováno";
+      setTimeout(() => {
+        btn.classList.remove("btn-copied");
+        status.textContent = "";
+      }, 2000);
+    });
+  }
+}
+
+function updateMailtoButton(text) {
   const mat = getMaterial();
-  const text = buildEmailText();
   const subj = encodeURIComponent(`Kalkulace řeziva – ${mat?.name}`);
   const link = `mailto:?subject=${subj}&body=${encodeURIComponent(text)}`;
+  document.getElementById("btnMailto").style.display =
+    link.length <= 1900 ? "" : "none";
+}
 
-  if (link.length <= 1900) {
-    // Short enough — open mail client via temporary <a>
-    const a = document.createElement("a");
-    a.href = link;
-    a.style.display = "none";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  } else {
-    // Too long for mailto — copy to clipboard
-    if (navigator.clipboard) {
-      navigator.clipboard
-        .writeText(text)
-        .then(() => {
-          showToast(
-            "Text nabídky byl zkopírován do schránky. Vložte ho do emailu ručně.",
-          );
-        })
-        .catch(() => {
-          showToast(
-            "Nepodařilo se zkopírovat. Text je příliš dlouhý pro email — zkuste tisk.",
-          );
-        });
-    } else {
-      showToast(
-        "Text nabídky je příliš dlouhý pro mailto. Použijte Tisk / PDF.",
-      );
-    }
+function openEmailMailto() {
+  const text = document.getElementById("emailText").value;
+  const mat = getMaterial();
+  const subj = encodeURIComponent(`Kalkulace řeziva – ${mat?.name}`);
+  const link = `mailto:?subject=${subj}&body=${encodeURIComponent(text)}`;
+  const a = document.createElement("a");
+  a.href = link;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function closeEmailModal() {
+  document.getElementById("emailModalOverlay").classList.remove("open");
+}
+
+function closeEmailModalOutside(event) {
+  if (event.target === document.getElementById("emailModalOverlay")) {
+    closeEmailModal();
   }
 }
 
@@ -878,23 +914,6 @@ function buildQuoteEmailText() {
   ].join("\n");
 }
 
-function sendQuoteEmail() {
-  const text = buildQuoteEmailText();
-  if (navigator.clipboard) {
-    navigator.clipboard
-      .writeText(text)
-      .then(() => {
-        showToast(
-          "Cenová nabídka zkopírována do schránky. Vložte ji do emailu.",
-        );
-      })
-      .catch(() => {
-        showToast("Nepodařilo se zkopírovat nabídku do schránky.");
-      });
-  } else {
-    showToast("Schránka není dostupná — zkopírujte text ručně.");
-  }
-}
 
 // ═══════════════════════════════════════════════════
 //  DARK MODE
