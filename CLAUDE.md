@@ -67,10 +67,11 @@ The file is organized into clearly marked sections with `═══` separator co
    - `migrateMaterials()` – handles backward-compat data migrations
 
 3. **HELPERS** – Utilities:
-   - `getMaterial(id)` – find material by id
-   - `getVAT()` – read VAT rate from UI
+   - `getMaterial()` – returns current material object from dropdown selection
+   - `getDph()` – read VAT rate from UI
    - `parseDecimal(str)` – accepts comma or period as decimal separator
    - `fmt()`, `fmtM3()`, `fmtKc()`, `fmtKg()` – Czech locale formatting with `\u00a0` separators
+   - `fmtDim(n)` – formats dimension (w/h) with 0–1 decimal places (e.g. `10` not `10,0`, but `10,5` stays `10,5`)
    - `showToast(msg)` – transient user feedback
 
 4. **AVAILABILITY CHECK**:
@@ -92,10 +93,11 @@ The file is organized into clearly marked sections with `═══` separator co
 8. **MODAL: MANAGE MATERIALS** – CRUD UI for custom materials and their available sizes
 
 9. **EXPORT HELPERS**:
-   - `exportPdf()` – uses html2pdf.js, always forces light mode, portrait orientation
-   - `exportEmail()` – builds mailto: URI, falls back to clipboard if >1900 chars
-   - `generatePriceQuote()` – formats a price-quote email body
-   - `escapeHtml()` – XSS-safe HTML escaping
+   - `exportPDF()` – uses html2pdf.js, always forces light mode, portrait orientation; displays average price per m³ (totNoDph/totM3)
+   - `buildEmailText()` – builds plain-text calculation table for mailto/clipboard; reads average price from `#sumPriceM3` DOM element
+   - `sendEmail()` – builds mailto: URI from `buildEmailText()`, falls back to clipboard if >1900 chars
+   - `buildQuoteEmailText()` – formats a customer-facing price-quote email body
+   - `escHtml()` – XSS-safe HTML escaping (used inside `exportPDF()`)
 
 10. **DARK MODE**:
     - `toggleTheme()` / `applyTheme(theme)` – toggle and apply
@@ -150,7 +152,7 @@ Two `localStorage` keys:
 | Key | Content |
 |---|---|
 | `rezivo_materials` | JSON array of all materials (default + custom) |
-| `rezivo_theme` | `"dark"` or `"light"` |
+| `app_theme` | `"dark"` or `"light"` |
 
 Custom materials created by the user are appended to the default list and saved. On load, defaults are merged with any saved customizations.
 
@@ -225,10 +227,11 @@ Default materials are defined at the top of `kalkulacka_reziva.js` in the `DEFAU
 
 ```js
 {
-  id: "unique-id",          // string, never change after release (used in localStorage)
+  id: 4,                    // number, never change after release (used in localStorage)
   name: "Display Name",     // Czech name shown in dropdown
-  pricePerM3: 16500,        // number, CZK per m³
+  price: 16500,             // number, CZK per m³ (property is `price`, not `pricePerM3`)
   density: 450,             // number, kg per m³
+  emailCode: "KVH NSi",     // optional short code used in price-quote email
   availableSizes: [         // array of {w, h} pairs in cm; [] = unrestricted
     { w: 45, h: 45 },
     { w: 60, h: 120 },
@@ -246,7 +249,9 @@ Default materials are defined at the top of `kalkulacka_reziva.js` in the `DEFAU
 - Uses `html2pdf.js` loaded from CDN — requires internet access to generate PDFs
 - Always renders in **light mode** regardless of user's current theme preference
 - Portrait orientation (`format: 'a4', orientation: 'portrait'`)
-- The JS temporarily applies `.pdf-export` class and overrides theme to force light mode, then restores after export
+- All styles are **inline** inside `exportPDF()` — not driven by `@media print` CSS
+- Displays **average price per m³** = `totNoDph / totM3`; falls back to `mat.price` when table is empty
+- Dimension formatting uses `fmtDim()` — no trailing decimal zero (e.g. `10`, not `10,0`)
 
 ---
 
@@ -254,7 +259,9 @@ Default materials are defined at the top of `kalkulacka_reziva.js` in the `DEFAU
 
 - Uses `mailto:` URI scheme (opens user's email client)
 - If the generated URI exceeds ~1900 characters (email client limit), falls back to **copying to clipboard** and shows a toast notification
-- Price quote email uses Czech business letter format
+- `buildEmailText()` reads summary values (including average price) directly from DOM elements (`#sumPriceM3`, `#sumM3`, etc.) — these are always up to date after `recalcSummary()`
+- Plain-text table format — no separator line under header (box-drawing chars cause line wrapping in email clients with proportional fonts)
+- Price-quote email (`buildQuoteEmailText()`) uses `mat.price` directly per row — this is correct since each row is calculated at the current material price
 
 ---
 
@@ -273,3 +280,9 @@ Default materials are defined at the top of `kalkulacka_reziva.js` in the `DEFAU
 6. **Print vs PDF**: The `@media print` CSS is used both for `window.print()` and for html2pdf.js rendering. Changes to print styles affect both outputs.
 
 7. **`rows` array is the source of truth**: The DOM table is always a derived view. Mutate `rows`, then call `renderRows()` — never mutate the DOM table directly.
+
+8. **Average price vs. material price**: `#sumPriceM3` in the stat bar shows `noDph / m3` (average effective price), **not** `mat.price`. `exportPDF()` and `buildEmailText()` follow the same logic. Do not replace these with `mat.price`.
+
+9. **Material property is `price`, not `pricePerM3`**: The field in the material object is `mat.price`. The CLAUDE.md previously documented it incorrectly as `pricePerM3`.
+
+10. **PDF styles are inline, not CSS**: `exportPDF()` builds a self-contained HTML string with inline styles. Changes to `kalkulacka_reziva.css` do **not** affect PDF output — only the inline `S` object inside `exportPDF()` does.
