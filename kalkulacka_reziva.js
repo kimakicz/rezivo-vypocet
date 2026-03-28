@@ -769,7 +769,7 @@ function buildEmailText() {
 
   let header = `Šířka[cm]  Výška[cm]  Délka[m]  Počet     m³        Bez DPH       S DPH    `;
   if (inclWght) header += `     Hmot.[kg]`;
-  header += `\n` + "─".repeat(header.length) + "\n";
+  header += "\n";
 
   const bodyRows = rows
     .map((row) => {
