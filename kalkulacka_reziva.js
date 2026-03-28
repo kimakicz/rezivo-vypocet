@@ -799,7 +799,7 @@ function buildEmailText() {
     `Kalkulace řeziva\n` +
     `================\n\n` +
     `Materiál: ${mat?.name}\n` +
-    `Cena za m³ bez DPH: ${fmt(mat?.price ?? 0)} Kč\n` +
+    `Cena za m³ bez DPH: ${document.getElementById("sumPriceM3").textContent}\n` +
     `DPH: ${dph}%\n` +
     `Datum: ${new Date().toLocaleDateString("cs-CZ")}\n\n` +
     header +
