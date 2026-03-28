@@ -115,6 +115,10 @@ function fmt(n, dec = 0) {
   });
 }
 
+function fmtDim(n) {
+  return n.toLocaleString("cs-CZ", { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+}
+
 function fmtM3(n) {
   return fmt(n, 3) + "\u00a0m³";
 }
@@ -662,10 +666,10 @@ function exportPDF() {
 
   // Styles matching the app's @media print CSS
   const S = {
-    th: "padding:6px 8px;background:#f0f0f0;border-bottom:1px solid #ccc;text-align:right;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#666;font-weight:600;white-space:nowrap;",
-    td: "padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-size:11px;color:#333;white-space:nowrap;",
-    tdInput: "padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-size:11px;color:#111;white-space:nowrap;",
-    tfTd: "padding:5px 8px;text-align:right;font-size:12px;font-weight:700;color:#111;border-top:2px solid #1d6f42;",
+    th: "padding:6px 8px;background:#f0f0f0;border-bottom:1px solid #ccc;text-align:right;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#444;font-weight:600;white-space:nowrap;",
+    td: "padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-size:13px;color:#111;white-space:nowrap;",
+    tdInput: "padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-size:13px;color:#111;white-space:nowrap;",
+    tfTd: "padding:5px 8px;text-align:right;font-size:14px;font-weight:700;color:#111;border-top:2px solid #1d6f42;",
   };
 
   const th = (label) => `<th style="${S.th}">${label}</th>`;
@@ -679,8 +683,8 @@ function exportPDF() {
     const n = parseDecimal(row.n);
     if (w === 0 && h === 0 && l === 0 && n === 0) return "";
     return `<tr>
-      <td style="${S.tdInput}">${fmt(w, 1)}</td>
-      <td style="${S.tdInput}">${fmt(h, 1)}</td>
+      <td style="${S.tdInput}">${fmtDim(w)}</td>
+      <td style="${S.tdInput}">${fmtDim(h)}</td>
       <td style="${S.tdInput}">${fmt(l, 2)}</td>
       <td style="${S.tdInput}">${fmt(n, 0)}</td>
       <td style="${S.td}">${fmtM3(c.m3)}</td>
@@ -734,7 +738,7 @@ function exportPDF() {
         </tr></thead>
         <tbody>${rowsHtml}</tbody>
         <tfoot><tr>
-          <td colspan="4" style="padding:5px 8px;font-weight:700;font-size:11px;border-top:2px solid #1d6f42;">Celkem</td>
+          <td colspan="4" style="padding:5px 8px;font-weight:700;font-size:14px;border-top:2px solid #1d6f42;">Celkem</td>
           ${tfTd(fmtM3(totM3))}${tfTd(fmtKc(totNoDph))}${tfTd(fmtKc(totWithDph))}
           ${inclWght ? tfTd(fmtKg(totKg)) : ""}
         </tr></tfoot>
