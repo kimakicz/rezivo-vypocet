@@ -914,12 +914,12 @@ function applyTheme(dark) {
 function toggleTheme() {
   const isDark = document.documentElement.dataset.theme === "dark";
   const next = !isDark;
-  localStorage.setItem("rezivo_theme", next ? "dark" : "light");
+  localStorage.setItem("app_theme", next ? "dark" : "light");
   applyTheme(next);
 }
 
 function initTheme() {
-  const saved = localStorage.getItem("rezivo_theme");
+  const saved = localStorage.getItem("app_theme");
   if (saved) {
     applyTheme(saved === "dark");
   } else {

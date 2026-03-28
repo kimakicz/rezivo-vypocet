@@ -152,7 +152,7 @@ Two `localStorage` keys:
 | Key | Content |
 |---|---|
 | `rezivo_materials` | JSON array of all materials (default + custom) |
-| `rezivo_theme` | `"dark"` or `"light"` |
+| `app_theme` | `"dark"` or `"light"` |
 
 Custom materials created by the user are appended to the default list and saved. On load, defaults are merged with any saved customizations.
 
