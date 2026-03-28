@@ -404,8 +404,9 @@ function recalcSummary() {
   document.getElementById("sumNoDph").textContent = fmtKc(noDph);
   document.getElementById("sumWithDph").textContent = fmtKc(withDph);
   document.getElementById("sumWeight").textContent = fmtKg(kg);
+  const avgPriceM3 = m3 > 0 ? noDph / m3 : (getMaterial()?.price ?? 0);
   document.getElementById("sumPriceM3").textContent =
-    fmt(getMaterial()?.price ?? 0) + "\u00a0Kč";
+    fmt(Math.round(avgPriceM3)) + "\u00a0Kč";
 }
 
 // ═══════════════════════════════════════════════════
@@ -664,6 +665,8 @@ function exportPDF() {
     totWithDph += c.priceWithDph; totKg += c.weight;
   });
 
+  const avgPriceM3Pdf = totM3 > 0 ? totNoDph / totM3 : (mat?.price ?? 0);
+
   // Styles matching the app's @media print CSS
   const S = {
     th: "padding:6px 8px;background:#f0f0f0;border-bottom:1px solid #ccc;text-align:right;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#444;font-weight:600;white-space:nowrap;",
@@ -712,7 +715,7 @@ function exportPDF() {
 
       <!-- Stat bar -->
       <div style="padding:6px 0;border-bottom:1px solid #ccc;margin-bottom:6px;">
-        ${statItem("Cena za m³ bez DPH", fmt(mat?.price ?? 0) + "\u00a0Kč", false)}
+        ${statItem("Cena za m³ bez DPH", fmt(Math.round(avgPriceM3Pdf)) + "\u00a0Kč", false)}
         ${statItem("Celkem m³", fmtM3(totM3), false)}
         ${statItem("Celkem bez DPH", fmtKc(totNoDph), false)}
         ${inclWght ? statItem("Celková hmotnost", fmtKg(totKg), false) : ""}
@@ -723,7 +726,7 @@ function exportPDF() {
       <div style="margin-bottom:10px;">
         <div style="font-size:16px;font-weight:700;color:#1d6f42;letter-spacing:-.01em;margin-bottom:4px;">${escHtml(mat?.name ?? "")}</div>
         <div style="font-size:10px;color:#666;">
-          <strong style="color:#444;">Cena za m³ bez DPH:</strong> ${fmt(mat?.price ?? 0)} Kč &emsp;
+          <strong style="color:#444;">Cena za m³ bez DPH:</strong> ${fmt(Math.round(avgPriceM3Pdf))} Kč &emsp;
           <strong style="color:#444;">DPH:</strong> ${dph} % &emsp;
           <strong style="color:#444;">Datum:</strong> ${dateStr}
         </div>
