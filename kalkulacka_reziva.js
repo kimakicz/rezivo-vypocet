@@ -62,7 +62,8 @@ const DEFAULT_MATERIALS = [
 
 let materials = loadMaterials();
 let selectedMatId = materials[0]?.id ?? 1;
-let rows = []; // { id, w, h, l, n }
+let orders = []; // [{ id, name, rows: [{ id, w, h, l, n, price }] }]
+let nextOrderId = 1;
 let nextRowId = 1;
 let nextMatId = Math.max(...materials.map((m) => m.id)) + 1;
 let calcHistory = [];
@@ -272,20 +273,24 @@ function onDensityChange() {
 // ═══════════════════════════════════════════════════
 const FIELDS = ["w", "h", "l", "n"];
 
-function addRow(w = "", h = "", l = "", n = "") {
+function addRow(orderId, w = "", h = "", l = "", n = "") {
+  const order = orders.find((o) => o.id === orderId);
+  if (!order) return;
   const id = nextRowId++;
-  rows.push({ id, w, h, l, n, price: null });
-  renderRow(rows[rows.length - 1]);
+  const row = { id, w, h, l, n, price: null };
+  order.rows.push(row);
+  const tbody = document.querySelector(`.order-section[data-order-id="${orderId}"] tbody`);
+  if (tbody) renderRow(row, orderId, tbody);
   updateTabIndexes();
   recalcSummary();
   const first = document.querySelector(`tr[data-id="${id}"] input`);
   if (first) first.focus();
 }
 
-function renderRow(row) {
-  const tbody = document.getElementById("tableBody");
+function renderRow(row, orderId, tbody) {
   const tr = document.createElement("tr");
   tr.dataset.id = row.id;
+  tr.dataset.orderId = orderId;
 
   const specs = [
     { key: "w", placeholder: "0", type: "text", inputmode: "decimal" },
@@ -426,36 +431,68 @@ function updateRowCalc(row) {
 }
 
 function deleteRow(id) {
-  rows = rows.filter((r) => r.id !== id);
+  for (const order of orders) {
+    const idx = order.rows.findIndex((r) => r.id === id);
+    if (idx !== -1) { order.rows.splice(idx, 1); break; }
+  }
   document.querySelector(`tr[data-id="${id}"]`)?.remove();
   updateTabIndexes();
   recalcSummary();
 }
 
 function clearAll() {
-  if (!confirm("Opravdu vymazat všechny řádky?")) return;
-  rows = [];
-  document.getElementById("tableBody").innerHTML = "";
-  recalcSummary();
-  addRow();
+  if (!confirm("Opravdu vymazat vše?")) return;
+  orders = [];
+  nextOrderId = 1;
+  nextRowId = 1;
+  document.getElementById("ordersContainer").innerHTML = "";
+  addOrder("Zakázka 1");
 }
 
 function recalcAll() {
-  rows.forEach((row) => updateRowCalc(row));
+  orders.forEach((order) => order.rows.forEach((row) => updateRowCalc(row)));
   recalcSummary();
 }
 
-function recalcSummary() {
-  let m3 = 0,
-    noDph = 0,
-    withDph = 0,
-    kg = 0;
-  rows.forEach((row) => {
+function calcOrderTotals(order) {
+  let m3 = 0, noDph = 0, withDph = 0, kg = 0;
+  order.rows.forEach((row) => {
     const c = calcRow(row);
-    m3 += c.m3;
-    noDph += c.priceNoDph;
-    withDph += c.priceWithDph;
-    kg += c.weight;
+    m3 += c.m3; noDph += c.priceNoDph;
+    withDph += c.priceWithDph; kg += c.weight;
+  });
+  return { m3, noDph, withDph, kg };
+}
+
+function updateOrderSubtotal(order) {
+  const tfoot = document.querySelector(`.order-section[data-order-id="${order.id}"] tfoot`);
+  if (!tfoot) return;
+  const t = calcOrderTotals(order);
+  tfoot.innerHTML = `
+    <tr class="order-subtotal">
+      <td colspan="4"></td>
+      <td class="col-price no-print"></td>
+      <td class="calc">${fmtM3(t.m3)}</td>
+      <td class="calc">${fmtKc(t.noDph)}</td>
+      <td class="calc">${fmtKc(t.withDph)}</td>
+      <td class="calc col-weight">${fmtKg(t.kg)}</td>
+      <td class="no-print"></td>
+      <td class="no-print"></td>
+    </tr>
+    <tr class="add-row-tr no-print">
+      <td colspan="11">
+        <button class="btn-primary btn-add-row" onclick="addRow(${order.id})">+ Přidat řádek</button>
+      </td>
+    </tr>`;
+}
+
+function recalcSummary() {
+  let m3 = 0, noDph = 0, withDph = 0, kg = 0;
+  orders.forEach((order) => {
+    const t = calcOrderTotals(order);
+    m3 += t.m3; noDph += t.noDph;
+    withDph += t.withDph; kg += t.kg;
+    updateOrderSubtotal(order);
   });
   document.getElementById("sumM3").textContent = fmtM3(m3);
   document.getElementById("sumNoDph").textContent = fmtKc(noDph);
@@ -471,12 +508,12 @@ function recalcSummary() {
 // ═══════════════════════════════════════════════════
 function updateTabIndexes() {
   let ti = 10;
-  rows.forEach((row) => {
-    FIELDS.forEach((f) => {
-      const inp = document.querySelector(
-        `tr[data-id="${row.id}"] input[data-field="${f}"]`,
-      );
-      if (inp) inp.tabIndex = ti++;
+  orders.forEach((order) => {
+    order.rows.forEach((row) => {
+      FIELDS.forEach((f) => {
+        const inp = document.querySelector(`tr[data-id="${row.id}"] input[data-field="${f}"]`);
+        if (inp) inp.tabIndex = ti++;
+      });
     });
   });
 }
@@ -488,24 +525,116 @@ function onInputKeyDown(e) {
   const rowId = parseInt(e.target.dataset.rowId, 10);
   const field = e.target.dataset.field;
   const isLastF = field === "n";
-  const isLastR = rows[rows.length - 1]?.id === rowId;
 
-  if (isLastF && isLastR) {
-    addRow();
-  } else if (isLastF) {
-    const idx = rows.findIndex((r) => r.id === rowId);
-    const nxt = rows[idx + 1];
-    if (nxt) {
-      document
-        .querySelector(`tr[data-id="${nxt.id}"] input[data-field="w"]`)
-        ?.focus();
+  if (!isLastF) {
+    const nextField = FIELDS[FIELDS.indexOf(field) + 1];
+    document.querySelector(`tr[data-id="${rowId}"] input[data-field="${nextField}"]`)?.focus();
+    return;
+  }
+
+  // Poslední pole — navigace přes zakázky
+  const tr = document.querySelector(`tr[data-id="${rowId}"]`);
+  const orderId = parseInt(tr?.dataset.orderId, 10);
+  const order = orders.find((o) => o.id === orderId);
+  if (!order) return;
+
+  const isLastRowInOrder = order.rows[order.rows.length - 1]?.id === rowId;
+  const isLastOrder = orders[orders.length - 1]?.id === orderId;
+
+  if (isLastRowInOrder && isLastOrder) {
+    addRow(orderId);
+  } else if (isLastRowInOrder) {
+    const nextOrder = orders[orders.findIndex((o) => o.id === orderId) + 1];
+    if (nextOrder?.rows.length) {
+      document.querySelector(`tr[data-id="${nextOrder.rows[0].id}"] input[data-field="w"]`)?.focus();
     }
   } else {
-    const nextField = FIELDS[FIELDS.indexOf(field) + 1];
-    document
-      .querySelector(`tr[data-id="${rowId}"] input[data-field="${nextField}"]`)
-      ?.focus();
+    const idx = order.rows.findIndex((r) => r.id === rowId);
+    const nxt = order.rows[idx + 1];
+    if (nxt) {
+      document.querySelector(`tr[data-id="${nxt.id}"] input[data-field="w"]`)?.focus();
+    }
   }
+}
+
+// ═══════════════════════════════════════════════════
+//  ORDER MANAGEMENT
+// ═══════════════════════════════════════════════════
+function createOrderSection(order) {
+  const div = document.createElement("div");
+  div.className = "order-section";
+  div.dataset.orderId = order.id;
+
+  const header = document.createElement("div");
+  header.className = "order-header no-print";
+  header.innerHTML = `
+    <input class="order-name" type="text" value="${escHtml(order.name)}"
+           title="Název zakázky" onchange="renameOrder(${order.id}, this.value)">
+    <button class="btn-danger btn-del-order" onclick="deleteOrder(${order.id})">× Zakázka</button>
+  `;
+
+  const printName = document.createElement("div");
+  printName.className = "order-name-print print-only";
+  printName.textContent = order.name;
+
+  const tableWrapper = document.createElement("div");
+  tableWrapper.className = "table-wrapper";
+
+  const table = document.createElement("table");
+  table.innerHTML = `
+    <thead><tr>
+      <th>šířka [cm]</th>
+      <th>výška [cm]</th>
+      <th>délka [m]</th>
+      <th>počet [ks]</th>
+      <th class="col-price no-print" title="Vlastní cena Kč/m³ pro tento řádek – přepíše výchozí cenu materiálu">vl. cena</th>
+      <th>m³</th>
+      <th>bez daně</th>
+      <th>s daní</th>
+      <th class="col-weight">hmotnost [kg]</th>
+      <th class="col-hint no-print"></th>
+      <th class="col-del no-print"></th>
+    </tr></thead>
+    <tbody></tbody>
+    <tfoot></tfoot>
+  `;
+
+  tableWrapper.appendChild(table);
+  div.appendChild(header);
+  div.appendChild(printName);
+  div.appendChild(tableWrapper);
+  return div;
+}
+
+function addOrder(name) {
+  const id = nextOrderId++;
+  const order = { id, name: name ?? `Zakázka ${id}`, rows: [] };
+  orders.push(order);
+  document.getElementById("ordersContainer").appendChild(createOrderSection(order));
+  addRow(id);
+}
+
+function deleteOrder(orderId) {
+  if (orders.length <= 1) {
+    showToast("Nelze smazat poslední zakázku.");
+    return;
+  }
+  const order = orders.find((o) => o.id === orderId);
+  if (order?.rows.length &&
+      !confirm(`Opravdu smazat zakázku „${order.name}" včetně ${order.rows.length} řádků?`)) return;
+  orders = orders.filter((o) => o.id !== orderId);
+  document.querySelector(`.order-section[data-order-id="${orderId}"]`)?.remove();
+  updateTabIndexes();
+  recalcSummary();
+}
+
+function renameOrder(orderId, name) {
+  const order = orders.find((o) => o.id === orderId);
+  if (!order) return;
+  order.name = name;
+  const printEl = document.querySelector(`.order-section[data-order-id="${orderId}"] .order-name-print`);
+  if (printEl) printEl.textContent = name;
+  updateOrderSubtotal(order);
 }
 
 // ═══════════════════════════════════════════════════
@@ -711,7 +840,7 @@ function detailedPrices() {
 
 function toggleDetailedPrices() {
   const on = detailedPrices();
-  document.getElementById("mainTable").classList.toggle("detailed-prices", on);
+  document.getElementById("ordersContainer").classList.toggle("detailed-prices", on);
   updatePriceInputPlaceholders();
 }
 
@@ -734,10 +863,10 @@ function exportPDF() {
 
   // Summary totals
   let totM3 = 0, totNoDph = 0, totWithDph = 0, totKg = 0;
-  rows.forEach((row) => {
-    const c = calcRow(row);
-    totM3 += c.m3; totNoDph += c.priceNoDph;
-    totWithDph += c.priceWithDph; totKg += c.weight;
+  orders.forEach((order) => {
+    const t = calcOrderTotals(order);
+    totM3 += t.m3; totNoDph += t.noDph;
+    totWithDph += t.withDph; totKg += t.kg;
   });
 
   const avgPriceM3Pdf = totM3 > 0 ? totNoDph / totM3 : (mat?.price ?? 0);
@@ -753,23 +882,40 @@ function exportPDF() {
   const th = (label) => `<th style="${S.th}">${label}</th>`;
   const tfTd = (v) => `<td style="${S.tfTd}">${v}</td>`;
 
-  const rowsHtml = rows.map((row) => {
-    const c = calcRow(row);
-    const w = parseDecimal(row.w);
-    const h = parseDecimal(row.h);
-    const l = parseDecimal(row.l);
-    const n = parseDecimal(row.n);
-    if (w === 0 && h === 0 && l === 0 && n === 0) return "";
-    return `<tr>
-      <td style="${S.tdInput}">${fmtDim(w)}</td>
-      <td style="${S.tdInput}">${fmtDim(h)}</td>
-      <td style="${S.tdInput}">${fmt(l, 2)}</td>
-      <td style="${S.tdInput}">${fmt(n, 0)}</td>
-      <td style="${S.td}">${fmtM3(c.m3)}</td>
-      <td style="${S.td}">${fmtKc(c.priceNoDph)}</td>
-      <td style="${S.td}">${fmtKc(c.priceWithDph)}</td>
-      ${inclWght ? `<td style="${S.td}">${fmtKg(c.weight)}</td>` : ""}
+  const colCount = 4 + 3 + (inclWght ? 1 : 0);
+  const multiOrder = orders.length > 1;
+  const rowsHtml = orders.map((order) => {
+    const orderHeader = multiOrder
+      ? `<tr><td colspan="${colCount}" style="padding:5px 8px;font-weight:700;font-size:12px;background:#f0f0f0;border-top:1px solid #ccc;">${escHtml(order.name)}</td></tr>`
+      : "";
+    const orderRows = order.rows.map((row) => {
+      const c = calcRow(row);
+      const w = parseDecimal(row.w);
+      const h = parseDecimal(row.h);
+      const l = parseDecimal(row.l);
+      const n = parseDecimal(row.n);
+      if (w === 0 && h === 0 && l === 0 && n === 0) return "";
+      return `<tr>
+        <td style="${S.tdInput}">${fmtDim(w)}</td>
+        <td style="${S.tdInput}">${fmtDim(h)}</td>
+        <td style="${S.tdInput}">${fmt(l, 2)}</td>
+        <td style="${S.tdInput}">${fmt(n, 0)}</td>
+        <td style="${S.td}">${fmtM3(c.m3)}</td>
+        <td style="${S.td}">${fmtKc(c.priceNoDph)}</td>
+        <td style="${S.td}">${fmtKc(c.priceWithDph)}</td>
+        ${inclWght ? `<td style="${S.td}">${fmtKg(c.weight)}</td>` : ""}
+      </tr>`;
+    }).join("");
+    if (!multiOrder) return orderRows;
+    const ot = calcOrderTotals(order);
+    const subtotal = `<tr>
+      <td colspan="4" style="padding:4px 8px;font-size:11px;font-style:italic;color:#666;border-top:1px dashed #ccc;">Mezisoučet</td>
+      <td style="${S.td};border-top:1px dashed #ccc;">${fmtM3(ot.m3)}</td>
+      <td style="${S.td};border-top:1px dashed #ccc;">${fmtKc(ot.noDph)}</td>
+      <td style="${S.td};border-top:1px dashed #ccc;">${fmtKc(ot.withDph)}</td>
+      ${inclWght ? `<td style="${S.td};border-top:1px dashed #ccc;">${fmtKg(ot.kg)}</td>` : ""}
     </tr>`;
+    return orderHeader + orderRows + subtotal;
   }).join("");
 
   // Stat bar items matching the screen layout
@@ -844,13 +990,21 @@ function buildEmailText() {
   const inclWght = weightIncluded();
   const pad = (s, n) => String(s).padStart(n);
 
-  let header = `Šířka[cm]  Výška[cm]  Délka[m]  Počet     m³        Bez DPH       S DPH    `;
-  if (inclWght) header += `     Hmot.[kg]`;
-  header += "\n";
+  const colHeader = () => {
+    let h = `Šířka[cm]  Výška[cm]  Délka[m]  Počet     m³        Bez DPH       S DPH    `;
+    if (inclWght) h += `     Hmot.[kg]`;
+    return h + "\n";
+  };
 
-  const bodyRows = rows
-    .map((row) => {
+  let body = "";
+  orders.forEach((order) => {
+    if (orders.length > 1) body += `\n--- ${order.name} ---\n`;
+    body += colHeader();
+    let oM3 = 0, oNoDph = 0, oWithDph = 0, oKg = 0;
+    order.rows.filter((row) => parseDecimal(row.w) > 0 || parseDecimal(row.n) > 0 || parseDecimal(row.l) > 0).forEach((row) => {
       const c = calcRow(row);
+      oM3 += c.m3; oNoDph += c.priceNoDph;
+      oWithDph += c.priceWithDph; oKg += c.weight;
       let r = [
         pad(parseDecimal(row.w), 9),
         pad(parseDecimal(row.h), 9),
@@ -861,9 +1015,14 @@ function buildEmailText() {
         pad(fmtKc(c.priceWithDph), 12),
       ].join("  ");
       if (inclWght) r += "  " + pad(fmtKg(c.weight), 10);
-      return r;
-    })
-    .join("\n");
+      body += r + "\n";
+    });
+    if (orders.length > 1) {
+      body += `Mezisoučet: ${fmtM3(oM3)}   Bez DPH: ${fmtKc(oNoDph)}   S DPH: ${fmtKc(oWithDph)}`;
+      if (inclWght) body += `   ${fmtKg(oKg)}`;
+      body += "\n";
+    }
+  });
 
   let footer =
     `\nCelkem m³:        ${document.getElementById("sumM3").textContent}\n` +
@@ -878,9 +1037,8 @@ function buildEmailText() {
     `Materiál: ${mat?.name}\n` +
     `Cena za m³ bez DPH: ${document.getElementById("sumPriceM3").textContent}\n` +
     `DPH: ${dph}%\n` +
-    `Datum: ${new Date().toLocaleDateString("cs-CZ")}\n\n` +
-    header +
-    bodyRows +
+    `Datum: ${new Date().toLocaleDateString("cs-CZ")}\n` +
+    body +
     footer
   );
 }
@@ -898,10 +1056,12 @@ function openEmailModal() {
 
 function onEmailFormatChange() {
   const format = document.getElementById("emailFormat").value;
-  const text = format === "quote" ? buildQuoteEmailText() : buildEmailText();
+  let text;
+  if (format === "quote") text = buildQuoteEmailText();
+  else if (format === "production") text = buildProductionOrderText();
+  else text = buildEmailText();
   document.getElementById("emailText").value = text;
   updateMailtoButton(text);
-  autoClipboard(text);
 }
 
 function autoClipboard(text) {
@@ -965,31 +1125,70 @@ function closeEmailModalOutside(event) {
 function buildQuoteEmailText() {
   const mat = getMaterial();
   const label = mat.emailCode?.trim() || mat.name;
-  const dph = getDph() / 100;
 
-  const lines = rows
-    .filter((r) => parseDecimal(r.w) > 0 && parseDecimal(r.n) > 0)
-    .map((r) => {
-      const w = parseDecimal(r.w);
-      const h = parseDecimal(r.h);
-      const l = parseDecimal(r.l);
-      const n = parseDecimal(r.n);
-      const c = calcRow(r);
-      const price = Math.round(c.priceWithDph);
-      const lCm = Math.round(l * 100);
-      return `${label} ${w} x ${h} x ${lCm} cm - ${n} ks - ${fmt(price)},- Kč vč. DPH`;
-    });
+  let sections = [];
+  let grandTotal = 0;
 
-  const total = rows.reduce((s, r) => s + calcRow(r).priceWithDph, 0);
+  orders.forEach((order) => {
+    const lines = order.rows
+      .filter((r) => parseDecimal(r.w) > 0 && parseDecimal(r.n) > 0)
+      .map((r) => {
+        const w = parseDecimal(r.w);
+        const h = parseDecimal(r.h);
+        const l = parseDecimal(r.l);
+        const n = parseDecimal(r.n);
+        const c = calcRow(r);
+        const price = Math.round(c.priceWithDph);
+        grandTotal += price;
+        const lCm = Math.round(l * 100);
+        return `${label} ${w} x ${h} x ${lCm} cm - ${n} ks - ${fmt(price)},- Kč vč. DPH`;
+      });
+    if (lines.length) {
+      const section = orders.length > 1 ? `${order.name}:\n${lines.join("\n")}` : lines.join("\n");
+      sections.push(section);
+    }
+  });
 
   return [
     "Dobrý den,",
     "zasílám cenovou nabídku:",
     "",
-    ...lines,
+    ...sections.flatMap((s, i) => (i < sections.length - 1 ? [s, ""] : [s])),
     "",
-    `Celkem ${fmt(Math.round(total))},- Kč vč. DPH`,
+    `Celkem ${fmt(Math.round(grandTotal))},- Kč vč. DPH`,
   ].join("\n");
+}
+
+// ═══════════════════════════════════════════════════
+//  EXPORT: OBJEDNÁVKA VÝROBY (jen rozměry, bez cen)
+// ═══════════════════════════════════════════════════
+function buildProductionOrderText() {
+  const mat = getMaterial();
+  const dateStr = new Date().toLocaleDateString("cs-CZ");
+  let body = `Objednávka materiálu – ${mat?.name}\nDatum: ${dateStr}\n`;
+  let grandM3 = 0;
+
+  orders.forEach((order) => {
+    const validRows = order.rows.filter((r) => parseDecimal(r.w) > 0 && parseDecimal(r.n) > 0);
+    if (!validRows.length) return;
+    if (orders.length > 1) body += `\n=== ${order.name} ===\n`;
+    let orderM3 = 0;
+    validRows.forEach((r) => {
+      const w = parseDecimal(r.w);
+      const h = parseDecimal(r.h);
+      const l = parseDecimal(r.l);
+      const n = parseDecimal(r.n);
+      const m3 = (w / 100) * (h / 100) * l * n;
+      orderM3 += m3;
+      const lCm = Math.round(l * 100);
+      body += `${w} \u00d7 ${h} \u00d7 ${lCm} cm  \u2013  ${n} ks\n`;
+    });
+    grandM3 += orderM3;
+    if (orders.length > 1) body += `Kubatura: ${fmtM3(orderM3)}\n`;
+  });
+
+  body += `\nCelkem: ${fmtM3(grandM3)}\n`;
+  return body;
 }
 
 
@@ -1012,16 +1211,16 @@ function persistHistory() {
 }
 
 function saveToHistory(silent = false) {
-  if (!rows.length) {
+  const hasRows = orders.some((o) => o.rows.length > 0);
+  if (!hasRows) {
     if (!silent) showToast("Nic k uložení.");
     return;
   }
   const mat = getMaterial();
   let totM3 = 0, totWithDph = 0;
-  rows.forEach((row) => {
-    const c = calcRow(row);
-    totM3 += c.m3;
-    totWithDph += c.priceWithDph;
+  orders.forEach((order) => {
+    const t = calcOrderTotals(order);
+    totM3 += t.m3; totWithDph += t.withDph;
   });
 
   const entry = {
@@ -1033,7 +1232,7 @@ function saveToHistory(silent = false) {
     dph: getDph(),
     totM3,
     totWithDph,
-    rows: JSON.parse(JSON.stringify(rows)),
+    orders: JSON.parse(JSON.stringify(orders)),
   };
 
   calcHistory.unshift(entry);
@@ -1089,18 +1288,32 @@ function restoreFromHistory(id) {
   const label = entry.note || entry.savedAt;
   if (!confirm(`Načíst výpočet „${label}"?\nAktuální tabulka bude přepsána.`)) return;
 
-  rows = JSON.parse(JSON.stringify(entry.rows));
-  nextRowId = Math.max(0, ...rows.map((r) => r.id)) + 1;
-  document.getElementById("tableBody").innerHTML = "";
-  rows.forEach((row) => renderRow(row));
+  orders = [];
+  nextOrderId = 1;
+  nextRowId = 1;
+  document.getElementById("ordersContainer").innerHTML = "";
+
+  const savedOrders = entry.orders
+    ?? [{ id: 1, name: entry.note || "Zakázka 1", rows: entry.rows ?? [] }];
+
+  savedOrders.forEach((savedOrder) => {
+    const oid = nextOrderId++;
+    const order = { id: oid, name: savedOrder.name ?? `Zakázka ${oid}`, rows: [] };
+    orders.push(order);
+    const section = createOrderSection(order);
+    document.getElementById("ordersContainer").appendChild(section);
+    const tbody = section.querySelector("tbody");
+    savedOrder.rows.forEach((savedRow) => {
+      const rid = nextRowId++;
+      const row = { ...savedRow, id: rid };
+      order.rows.push(row);
+      renderRow(row, oid, tbody);
+    });
+  });
+
   updateTabIndexes();
-
   const inp = document.getElementById("zakazInput");
-  if (inp) {
-    inp.value = entry.note ?? "";
-    onZakazChange();
-  }
-
+  if (inp) { inp.value = entry.note ?? ""; onZakazChange(); }
   recalcAll();
   updatePriceInputPlaceholders();
   closeHistoryModal();
@@ -1152,6 +1365,5 @@ function initTheme() {
   initTheme();
   initZakaz();
   renderMaterialSelect();
-  addRow();
-  recalcSummary();
+  addOrder("Zakázka 1");
 })();
