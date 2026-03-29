@@ -616,7 +616,7 @@ tbody td input.avail-no {
 
 /* ── Sloupec vlastní ceny Kč/m³ (podrobné ceny) ──── */
 .col-price { display: none; }
-#mainTable.detailed-prices .col-price { display: table-cell; }
+.detailed-prices .col-price { display: table-cell; }
 
 .input-price-override {
   width: 72px !important;
@@ -851,6 +851,84 @@ tbody tr.has-price-override {
 
 .history-modal-footer { justify-content: space-between; }
 
+/* ── Order sections ─────────────────────────────── */
+.order-section {
+  margin-bottom: 20px;
+}
+
+.order-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 0 6px;
+}
+
+.order-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--accent);
+  padding: 2px 6px;
+  font-family: inherit;
+  outline: none;
+  min-width: 120px;
+  max-width: 420px;
+}
+.order-name:focus {
+  background: var(--bg-focus);
+  border-radius: 2px 2px 0 0;
+}
+
+.btn-del-order {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.order-name-print {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  padding: 4px 0 2px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.order-subtotal td {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+  border-top: 1px solid var(--accent);
+  padding: 4px 10px;
+}
+.order-subtotal td:first-child {
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 500;
+  font-style: italic;
+}
+
+/* + Přidat řádek inside tfoot */
+.add-row-tr td {
+  padding: 0;
+  border-top: none;
+  background: transparent;
+}
+.btn-add-row {
+  width: 100%;
+  padding: 5px 14px;
+  border-radius: 0 0 3px 3px;
+  font-size: 12px;
+  font-weight: 500;
+  opacity: .65;
+  transition: opacity .15s;
+}
+.btn-add-row:hover { opacity: 1; }
+
 /* ── Print ───────────────────────────────────────── */
 .print-only { display: none; }
 
@@ -886,6 +964,13 @@ tbody tr.has-price-override {
   /* Optional: hide weight column when .hide-weight is set */
   .hide-weight .col-weight { display: none !important; }
   .hide-weight .sum-weight { display: none !important; }
+
+  /* Order sections in print */
+  .order-section { margin-bottom: 14px; }
+  .order-header { display: none; }
+  .order-name-print { display: block !important; font-size: 12px; color: #333; border-bottom: 1px solid #ccc; }
+  .order-subtotal td { background: #f5f5f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .add-row-tr { display: none; }
 
   /* Reset availability colors for print */
   tbody td input.avail-ok,

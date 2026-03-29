@@ -128,35 +128,13 @@
                 />
             </div>
 
-            <!-- ── Table ── -->
-            <div class="table-wrapper">
-                <table id="mainTable">
-                    <thead>
-                        <tr>
-                            <th>šířka [cm]</th>
-                            <th>výška [cm]</th>
-                            <th>délka [m]</th>
-                            <th>počet [ks]</th>
-                            <th class="col-price no-print" title="Vlastní cena Kč/m³ pro tento řádek – přepíše výchozí cenu materiálu">vl. cena</th>
-                            <th>m³</th>
-                            <th>bez daně</th>
-                            <th>s daní</th>
-                            <th class="col-weight">hmotnost [kg]</th>
-                            <th
-                                class="col-hint no-print"
-                                title="Tip: nejbližší dostupné rozměry"
-                            ></th>
-                            <th class="col-del no-print"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody"></tbody>
-                </table>
-            </div>
+            <!-- ── Orders container ── -->
+            <div id="ordersContainer"></div>
 
             <!-- ── Actions ── -->
             <div class="actions no-print">
-                <button class="btn-primary" onclick="addRow()">
-                    + Přidat řádek
+                <button class="btn-primary" onclick="addOrder()">
+                    + Přidat zakázku
                 </button>
                 <button class="btn-danger" onclick="clearAll()">
                     Vymazat vše
@@ -335,6 +313,7 @@
                     <select id="emailFormat" onchange="onEmailFormatChange()">
                         <option value="quote">Cenová nabídka</option>
                         <option value="calc">Kalkulace</option>
+                        <option value="production">Objednávka výroby</option>
                     </select>
                 </div>
 
