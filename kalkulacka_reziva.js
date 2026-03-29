@@ -470,7 +470,7 @@ function updateOrderSubtotal(order) {
   const t = calcOrderTotals(order);
   tfoot.innerHTML = `
     <tr class="order-subtotal">
-      <td colspan="4">${escHtml(order.name)}</td>
+      <td colspan="4"></td>
       <td class="col-price no-print"></td>
       <td class="calc">${fmtM3(t.m3)}</td>
       <td class="calc">${fmtKc(t.noDph)}</td>
@@ -1001,7 +1001,7 @@ function buildEmailText() {
     if (orders.length > 1) body += `\n--- ${order.name} ---\n`;
     body += colHeader();
     let oM3 = 0, oNoDph = 0, oWithDph = 0, oKg = 0;
-    order.rows.forEach((row) => {
+    order.rows.filter((row) => parseDecimal(row.w) > 0 || parseDecimal(row.n) > 0 || parseDecimal(row.l) > 0).forEach((row) => {
       const c = calcRow(row);
       oM3 += c.m3; oNoDph += c.priceNoDph;
       oWithDph += c.priceWithDph; oKg += c.weight;
