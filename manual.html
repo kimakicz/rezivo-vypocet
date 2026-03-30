@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalkulačka řeziva – Uživatelský manuál</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #1a1a1a;
+    background: #fff;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 48px;
+  }
+
+  /* ── COVER ── */
+  .cover {
+    min-height: 200px;
+    background: linear-gradient(135deg, #1d6f42 0%, #2d9e5f 60%, #22c55e 100%);
+    border-radius: 16px;
+    padding: 44px 48px;
+    color: #fff;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: "";
+    position: absolute;
+    right: -40px; top: -40px;
+    width: 240px; height: 240px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.08);
+  }
+  .cover::after {
+    content: "";
+    position: absolute;
+    right: 60px; bottom: -60px;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.06);
+  }
+  .cover-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .cover h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -.5px;
+    margin-bottom: 6px;
+  }
+  .cover p {
+    font-size: 14px;
+    opacity: .85;
+  }
+  .cover-badge {
+    display: inline-block;
+    background: rgba(255,255,255,.2);
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  /* ── SECTION HEADINGS ── */
+  h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1d6f42;
+    margin: 32px 0 14px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #e8f5ee;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h2 .icon {
+    width: 28px; height: 28px;
+    background: #e8f5ee;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin: 18px 0 8px;
+  }
+
+  /* ── TABLE ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 12.5px;
+  }
+  thead tr {
+    background: #1d6f42;
+    color: #fff;
+  }
+  thead th {
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 11.5px;
+    letter-spacing: .3px;
+  }
+  thead th:first-child { border-radius: 6px 0 0 0; }
+  thead th:last-child  { border-radius: 0 6px 0 0; }
+  tbody tr:nth-child(even) { background: #f7faf8; }
+  tbody tr:hover { background: #eef7f2; }
+  td { padding: 7px 12px; border-bottom: 1px solid #e5e7eb; }
+  td strong { color: #1d6f42; }
+
+  /* ── CALLOUT BOXES ── */
+  .tip, .note, .warn {
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin: 14px 0;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 12.5px;
+  }
+  .tip  { background: #e8f5ee; border-left: 4px solid #1d6f42; }
+  .note { background: #eff6ff; border-left: 4px solid #3b82f6; }
+  .warn { background: #fef3c7; border-left: 4px solid #f59e0b; }
+  .tip .ci, .note .ci, .warn .ci { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  /* ── STEPS ── */
+  .steps { list-style: none; margin: 12px 0; }
+  .steps li {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .step-num {
+    width: 24px; height: 24px;
+    background: #1d6f42;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .steps li p { margin: 0; }
+
+  /* ── KEYBOARD KEYS ── */
+  kbd {
+    display: inline-block;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-bottom: 2px solid #9ca3af;
+    border-radius: 5px;
+    padding: 1px 7px;
+    font-family: monospace;
+    font-size: 11.5px;
+    color: #374151;
+  }
+
+  /* ── FORMAT CARDS ── */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 14px 0;
+  }
+  .card {
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+  .card .card-icon { font-size: 24px; margin-bottom: 6px; }
+  .card .card-title { font-weight: 700; font-size: 12px; color: #1d6f42; margin-bottom: 4px; }
+  .card .card-desc  { font-size: 11px; color: #6b7280; }
+
+  /* ── TOOLBAR PREVIEW ── */
+  .toolbar-preview {
+    background: #f9fafb;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 12px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .btn-prev {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #fff;
+    border: 1.5px solid #d1d5db;
+    border-radius: 6px;
+    padding: 5px 11px;
+    font-size: 11.5px;
+    font-family: inherit;
+    color: #374151;
+    font-weight: 500;
+  }
+  .btn-prev.green {
+    background: #1d6f42;
+    color: #fff;
+    border-color: #1d6f42;
+  }
+  .btn-prev.danger {
+    background: #fff;
+    color: #dc2626;
+    border-color: #fca5a5;
+  }
+
+  /* ── ROW DIAGRAM ── */
+  .row-diagram {
+    display: flex;
+    gap: 6px;
+    align-items: stretch;
+    margin: 14px 0;
+  }
+  .field-box {
+    flex: 1;
+    border: 2px solid #1d6f42;
+    border-radius: 8px;
+    padding: 10px 8px 6px;
+    text-align: center;
+    position: relative;
+  }
+  .field-box .fb-label {
+    font-size: 10px;
+    color: #6b7280;
+    margin-bottom: 4px;
+  }
+  .field-box .fb-val {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1d6f42;
+  }
+  .field-box .fb-unit {
+    font-size: 9px;
+    color: #9ca3af;
+    margin-top: 2px;
+  }
+  .field-arrow {
+    display: flex;
+    align-items: center;
+    color: #9ca3af;
+    font-size: 18px;
+    padding-bottom: 4px;
+  }
+  .field-box.calc-box {
+    border-color: #3b82f6;
+    background: #eff6ff;
+  }
+  .field-box.calc-box .fb-label { color: #3b82f6; }
+  .field-box.calc-box .fb-val   { color: #1e40af; }
+  .equals { font-size: 20px; color: #6b7280; display: flex; align-items: center; }
+
+  /* ── FOOTER ── */
+  .footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1.5px solid #e5e7eb;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 11px;
+  }
+
+  /* ── PAGE BREAK ── */
+  .page-break { page-break-before: always; }
+
+  @media print {
+    body { padding: 20px 28px; font-size: 12px; max-width: none; }
+    .cover { border-radius: 8px; padding: 32px 36px; }
+    .cover h1 { font-size: 24px; }
+    h2 { font-size: 14px; }
+    .cards { gap: 8px; }
+    .card { padding: 10px; }
+    a { color: inherit; text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <span class="cover-badge">Uživatelský manuál</span>
+  <span class="cover-icon">🪵</span>
+  <h1>Kalkulačka řeziva</h1>
+  <p>Jednoduchý průvodce pro začínající uživatele</p>
+</div>
+
+<!-- 1. ZADÁVÁNÍ ROZMĚRŮ -->
+<h2><span class="icon">📐</span> Zadávání rozměrů</h2>
+
+<p>Každý řádek tabulky představuje jeden druh řeziva. Do čtyř polí zadej rozměry a počet kusů.</p>
+
+<div class="row-diagram">
+  <div class="field-box">
+    <div class="fb-label">Šířka</div>
+    <div class="fb-val">8</div>
+    <div class="fb-unit">cm</div>
+  </div>
+  <div class="field-arrow">×</div>
+  <div class="field-box">
+    <div class="fb-label">Výška</div>
+    <div class="fb-val">16</div>
+    <div class="fb-unit">cm</div>
+  </div>
+  <div class="field-arrow">×</div>
+  <div class="field-box">
+    <div class="fb-label">Délka</div>
+    <div class="fb-val">4,5</div>
+    <div class="fb-unit">m</div>
+  </div>
+  <div class="field-arrow">×</div>
+  <div class="field-box">
+    <div class="fb-label">Počet</div>
+    <div class="fb-val">10</div>
+    <div class="fb-unit">ks</div>
+  </div>
+  <div class="equals">=</div>
+  <div class="field-box calc-box">
+    <div class="fb-label">Kubatura</div>
+    <div class="fb-val">0,576</div>
+    <div class="fb-unit">m³</div>
+  </div>
+</div>
+
+<div class="tip">
+  <span class="ci">💡</span>
+  <span>Jako desetinnou značku používej <strong>čárku</strong> — například <kbd>4,5</kbd> nebo <kbd>10,5</kbd>.</span>
+</div>
+
+<h3>Klávesové zkratky</h3>
+<table>
+  <thead><tr><th>Klávesa</th><th>Akce</th></tr></thead>
+  <tbody>
+    <tr><td><kbd>Tab</kbd> nebo <kbd>Enter</kbd></td><td>Přesun na další pole (šířka → výška → délka → počet)</td></tr>
+    <tr><td><kbd>Enter</kbd> na poli Počet</td><td>Přidá nový prázdný řádek automaticky</td></tr>
+  </tbody>
+</table>
+
+<!-- 2. PANEL NÁSTROJŮ -->
+<h2><span class="icon">🔧</span> Panel nástrojů</h2>
+
+<div class="toolbar-preview">
+  <span class="btn-prev green">⬇ Stáhnout PDF</span>
+  <span class="btn-prev green">✉ Email</span>
+  <span class="btn-prev">+ Přidat zakázku</span>
+  <span class="btn-prev">💾 Uložit</span>
+  <span class="btn-prev">📋 Historie</span>
+  <span class="btn-prev">Spravovat typy</span>
+  <span class="btn-prev danger">🗑 Vymazat</span>
+  <span class="btn-prev">🌙</span>
+</div>
+
+<table>
+  <thead><tr><th>Tlačítko</th><th>Co dělá</th></tr></thead>
+  <tbody>
+    <tr><td><strong>⬇ Stáhnout PDF</strong></td><td>Vygeneruje PDF přehled všech zakázek</td></tr>
+    <tr><td><strong>✉ Email</strong></td><td>Otevře okno s výběrem formátu e-mailu</td></tr>
+    <tr><td><strong>+ Přidat zakázku</strong></td><td>Přidá novou tabulku pro další zakázku</td></tr>
+    <tr><td><strong>💾 Uložit</strong></td><td>Uloží aktuální výpočet do historie</td></tr>
+    <tr><td><strong>📋 Historie</strong></td><td>Zobrazí uložené výpočty (max. 20)</td></tr>
+    <tr><td><strong>Spravovat typy</strong></td><td>Správa ceníku materiálů (vedle výběru materiálu)</td></tr>
+    <tr><td><strong>🗑 Vymazat</strong></td><td>Smaže všechny řádky a zakázky</td></tr>
+    <tr><td><strong>🌙 / ☀</strong></td><td>Přepínání světlého a tmavého režimu</td></tr>
+  </tbody>
+</table>
+
+<!-- 3. MATERIÁL A CENA -->
+<h2><span class="icon">💰</span> Materiál a cena</h2>
+
+<p>V horní části stránky vyber materiál z rozbalovacího seznamu. Cena a hustota se vyplní automaticky z ceníku.</p>
+
+<div class="note">
+  <span class="ci">ℹ️</span>
+  <span>Cenu a hustotu lze přepsat přímo v polích vedle výběru materiálu — změna platí jen pro aktuální výpočet, ceník se nemění.</span>
+</div>
+
+<h3>Vlastní cena na řádek</h3>
+<p>Zaškrtni políčko <strong>Vlastní cena na řádek</strong> v panelu nástrojů. U každého řádku se zobrazí sloupec pro zadání individuální ceny — hodí se např. pokud různé kusy mají jinou cenu.</p>
+
+<h3>DPH</h3>
+<p>Sazbu DPH nastav v poli <strong>DPH %</strong>. Tabulka zobrazuje automaticky ceny bez i včetně DPH.</p>
+
+<!-- 4. VÍCE ZAKÁZEK -->
+<div class="page-break"></div>
+<h2><span class="icon">📋</span> Více zakázek</h2>
+
+<p>Aplikace umožňuje pracovat s více zakázkami najednou — každá má vlastní tabulku.</p>
+
+<ol class="steps">
+  <li>
+    <span class="step-num">1</span>
+    <p>Klikni na <strong>+ Přidat zakázku</strong> — přibyde nová tabulka s názvem <em>Zakázka 2</em>.</p>
+  </li>
+  <li>
+    <span class="step-num">2</span>
+    <p>Klikni na název zakázky a přepiš ho (např. <em>Střecha</em>, <em>Podlaha</em>…).</p>
+  </li>
+  <li>
+    <span class="step-num">3</span>
+    <p>Zadej řádky s řezivem do každé zakázky zvlášť.</p>
+  </li>
+  <li>
+    <span class="step-num">4</span>
+    <p>Stat bar nahoře ukazuje <strong>celkový součet přes všechny zakázky</strong>.</p>
+  </li>
+</ol>
+
+<div class="tip">
+  <span class="ci">💡</span>
+  <span>Zakázku smažeš tlačítkem <strong>× Zakázka</strong> vpravo v záhlaví tabulky. Poslední zakázku nelze smazat.</span>
+</div>
+
+<!-- 5. EXPORT PDF -->
+<h2><span class="icon">📄</span> Export do PDF</h2>
+
+<ol class="steps">
+  <li><span class="step-num">1</span><p>Klikni na <strong>⬇ Stáhnout PDF</strong>.</p></li>
+  <li><span class="step-num">2</span><p>Prohlížeč stáhne soubor s dnešním datem v názvu.</p></li>
+  <li><span class="step-num">3</span><p>PDF obsahuje: záhlaví s materiálem a datem, tabulky všech zakázek s mezisoučty a celkový součet.</p></li>
+</ol>
+
+<div class="warn">
+  <span class="ci">⚠️</span>
+  <span>PDF se generuje pomocí online knihovny — pro export je potřeba <strong>připojení k internetu</strong>.</span>
+</div>
+
+<!-- 6. ODESLÁNÍ E-MAILEM -->
+<h2><span class="icon">✉️</span> Odeslání e-mailem</h2>
+
+<p>Klikni na <strong>✉ Email</strong>. Otevře se okno s výběrem formátu a náhledem textu.</p>
+
+<div class="cards">
+  <div class="card">
+    <div class="card-icon">🧮</div>
+    <div class="card-title">Kalkulace</div>
+    <div class="card-desc">Interní přehled s cenami a objemy</div>
+  </div>
+  <div class="card">
+    <div class="card-icon">📩</div>
+    <div class="card-title">Cenová nabídka</div>
+    <div class="card-desc">E-mail pro zákazníka s cenami</div>
+  </div>
+  <div class="card">
+    <div class="card-icon">🏭</div>
+    <div class="card-title">Objednávka výroby</div>
+    <div class="card-desc">Přehled pro výrobu nebo pilu</div>
+  </div>
+</div>
+
+<p>Po kliknutí na <strong>Odeslat</strong> se otevře tvůj e-mailový klient s předvyplněným textem. Pokud je text příliš dlouhý, zkopíruje se automaticky do schránky — pak ho jen vlož do e-mailu.</p>
+
+<!-- 7. HISTORIE -->
+<h2><span class="icon">🕐</span> Historie výpočtů</h2>
+
+<p>Aplikace si pamatuje až <strong>20 výpočtů</strong>. Při každém PDF exportu nebo odeslání e-mailu se stav uloží automaticky.</p>
+
+<table>
+  <thead><tr><th>Akce</th><th>Výsledek</th></tr></thead>
+  <tbody>
+    <tr><td><strong>💾 Uložit</strong></td><td>Ruční uložení aktuálního stavu</td></tr>
+    <tr><td><strong>📋 Historie</strong></td><td>Zobrazí seznam uložených výpočtů</td></tr>
+    <tr><td><strong>Načíst</strong> u záznamu</td><td>Obnoví daný výpočet včetně všech zakázek</td></tr>
+  </tbody>
+</table>
+
+<!-- 8. SPRÁVA MATERIÁLŮ -->
+<h2><span class="icon">⚙️</span> Správa typů materiálů</h2>
+
+<ol class="steps">
+  <li><span class="step-num">1</span><p>V horním řádku vyber materiál a klikni na <strong>Spravovat typy</strong> vedle rozbalovacího seznamu.</p></li>
+  <li><span class="step-num">2</span><p>Uprav název, zkratku, cenu nebo hustotu přímo v tabulce.</p></li>
+  <li><span class="step-num">3</span><p>Nový materiál přidáš tlačítkem <strong>+ Přidat materiál</strong> dole.</p></li>
+  <li><span class="step-num">4</span><p>Lze nastavit dostupné rozměry (šířka × výška × délky) — aplikace pak upozorní, pokud zadáš neobvyklý průřez.</p></li>
+</ol>
+
+<div class="tip">
+  <span class="ci">💡</span>
+  <span>Vlastní materiály a jejich ceny se ukládají v prohlížeči — zůstanou i po zavření stránky.</span>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  Kalkulačka řeziva &nbsp;·&nbsp; Uživatelský manuál &nbsp;·&nbsp; Tisk: Soubor → Tisk → Uložit jako PDF
+</div>
+
+</body>
+</html>
