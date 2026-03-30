@@ -210,7 +210,7 @@ function calcRow(row) {
   const m3 = (w / 100) * (h / 100) * l * n;
   const mat = getMaterial();
   const dph = getDph() / 100;
-  const effPrice = parseDecimal(row.price) || sessionPriceOverride ?? mat.price;
+  const effPrice = parseDecimal(row.price) || (sessionPriceOverride ?? mat.price);
   const effDensity = sessionDensityOverride ?? mat.density;
   return {
     m3,
