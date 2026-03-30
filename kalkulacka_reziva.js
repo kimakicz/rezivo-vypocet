@@ -67,6 +67,8 @@ let nextOrderId = 1;
 let nextRowId = 1;
 let nextMatId = Math.max(...materials.map((m) => m.id)) + 1;
 let calcHistory = [];
+let sessionPriceOverride = null;   // dočasná cena pro aktuální výpočet (neuloží se)
+let sessionDensityOverride = null; // dočasná hustota pro aktuální výpočet (neuloží se)
 
 // ═══════════════════════════════════════════════════
 //  PERSISTENCE
@@ -146,17 +148,13 @@ function getZakaz() {
 }
 
 function onZakazChange() {
-  localStorage.setItem("rezivo_zakaz", getZakaz());
   const el = document.getElementById("printZakaz");
   if (el) el.textContent = getZakaz();
 }
 
 function initZakaz() {
-  const saved = localStorage.getItem("rezivo_zakaz") ?? "";
-  const inp = document.getElementById("zakazInput");
-  if (inp) inp.value = saved;
-  const el = document.getElementById("printZakaz");
-  if (el) el.textContent = saved;
+  // pole záměrně začíná prázdné — název zákazníka se nepamatuje mezi sezeními
+  // (ukládá se pouze do záznamů historie)
 }
 
 // ═══════════════════════════════════════════════════
@@ -212,12 +210,13 @@ function calcRow(row) {
   const m3 = (w / 100) * (h / 100) * l * n;
   const mat = getMaterial();
   const dph = getDph() / 100;
-  const price = parseDecimal(row.price) || mat.price;
+  const effPrice = parseDecimal(row.price) || (sessionPriceOverride ?? mat.price);
+  const effDensity = sessionDensityOverride ?? mat.density;
   return {
     m3,
-    priceNoDph: m3 * price,
-    priceWithDph: m3 * price * (1 + dph),
-    weight: m3 * mat.density,
+    priceNoDph: m3 * effPrice,
+    priceWithDph: m3 * effPrice * (1 + dph),
+    weight: m3 * effDensity,
   };
 }
 
@@ -246,25 +245,21 @@ function syncMaterialInputs() {
 
 function onMaterialChange() {
   selectedMatId = parseInt(document.getElementById("materialSelect").value, 10);
+  sessionPriceOverride = null;
+  sessionDensityOverride = null;
   syncMaterialInputs();
   updatePriceInputPlaceholders();
   recalcAll();
 }
 
 function onPriceChange() {
-  const mat = getMaterial();
-  if (!mat) return;
-  mat.price = parseFloat(document.getElementById("priceInput").value) || 0;
-  saveMaterials();
+  sessionPriceOverride = parseFloat(document.getElementById("priceInput").value) || null;
   updatePriceInputPlaceholders();
   recalcAll();
 }
 
 function onDensityChange() {
-  const mat = getMaterial();
-  if (!mat) return;
-  mat.density = parseFloat(document.getElementById("densityInput").value) || 0;
-  saveMaterials();
+  sessionDensityOverride = parseFloat(document.getElementById("densityInput").value) || null;
   recalcAll();
 }
 
@@ -641,6 +636,7 @@ function renameOrder(orderId, name) {
 //  MODAL: MANAGE MATERIALS
 // ═══════════════════════════════════════════════════
 function openModal() {
+  materials = loadMaterials(); // vždy čerstvá uložená data, ne dočasné session overrides
   renderMaterialTable();
   renderSizesSection();
   document.getElementById("modalOverlay").classList.add("open");
