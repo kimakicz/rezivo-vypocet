@@ -924,8 +924,21 @@ function exportPDF() {
   const html = `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:11px;color:#111;background:#fff;color-scheme:light;">
 
+      <!-- Hlavička firmy -->
+      <div style="display:flex;justify-content:space-between;align-items:stretch;background:#1d6f42;color:#fff;border-radius:6px 6px 0 0;margin-bottom:0;overflow:hidden;">
+        <div style="padding:12px 16px;">
+          <div style="font-size:18px;font-weight:800;letter-spacing:-.02em;line-height:1.1;">SAMYCO</div>
+          <div style="font-size:11px;font-weight:500;opacity:.9;margin-top:2px;">Rudolf Houfek</div>
+        </div>
+        <div style="background:rgba(0,0,0,.15);width:1px;margin:10px 0;"></div>
+        <div style="padding:12px 16px;text-align:right;font-size:10.5px;opacity:.92;line-height:1.7;">
+          <div>Pražská 422/133, Č. Budějovice</div>
+          <div>www.samyco.cz</div>
+        </div>
+      </div>
+
       <!-- Header -->
-      <div style="display:flex;align-items:baseline;gap:10px;padding:8px 0 8px;border-bottom:1px solid #ccc;margin-bottom:0;">
+      <div style="display:flex;align-items:baseline;gap:10px;padding:8px 0 8px;border-bottom:1px solid #ccc;margin-bottom:0;margin-top:10px;">
         <span style="font-size:14px;font-weight:700;letter-spacing:-.01em;">Kalkulačka řeziva</span>
         <span style="font-size:11px;color:#999;">kubatura · ceny · hmotnost</span>
       </div>
