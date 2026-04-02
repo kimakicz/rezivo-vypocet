@@ -22,6 +22,30 @@
             </button>
         </div>
 
+        <!-- ── Stat bar (summary) ── -->
+        <div class="stat-bar">
+            <div class="stat-item">
+                <span class="s-lbl">Cena za m³ bez DPH</span>
+                <span class="s-val" id="sumPriceM3">0 Kč</span>
+            </div>
+            <div class="stat-item">
+                <span class="s-lbl">Celkem m³</span>
+                <span class="s-val" id="sumM3">0,000 m³</span>
+            </div>
+            <div class="stat-item">
+                <span class="s-lbl">Celkem bez DPH</span>
+                <span class="s-val" id="sumNoDph">0 Kč</span>
+            </div>
+            <div class="stat-item sum-weight">
+                <span class="s-lbl">Celková hmotnost</span>
+                <span class="s-val" id="sumWeight">0 kg</span>
+            </div>
+            <div class="stat-item">
+                <span class="s-lbl">Celkem s DPH</span>
+                <span class="s-val" id="sumWithDph">0 Kč</span>
+            </div>
+        </div>
+
         <!-- ── Toolbar (material selector) ── -->
         <div class="toolbar no-print">
             <span class="lbl">Materiál</span>
@@ -77,30 +101,6 @@
             <button class="btn-ghost" onclick="openModal()">
                 Spravovat typy
             </button>
-        </div>
-
-        <!-- ── Stat bar (summary) ── -->
-        <div class="stat-bar">
-            <div class="stat-item">
-                <span class="s-lbl">Cena za m³ bez DPH</span>
-                <span class="s-val" id="sumPriceM3">0 Kč</span>
-            </div>
-            <div class="stat-item">
-                <span class="s-lbl">Celkem m³</span>
-                <span class="s-val" id="sumM3">0,000 m³</span>
-            </div>
-            <div class="stat-item">
-                <span class="s-lbl">Celkem bez DPH</span>
-                <span class="s-val" id="sumNoDph">0 Kč</span>
-            </div>
-            <div class="stat-item sum-weight">
-                <span class="s-lbl">Celková hmotnost</span>
-                <span class="s-val" id="sumWeight">0 kg</span>
-            </div>
-            <div class="stat-item">
-                <span class="s-lbl">Celkem s DPH</span>
-                <span class="s-val" id="sumWithDph">0 Kč</span>
-            </div>
         </div>
 
         <div class="container">

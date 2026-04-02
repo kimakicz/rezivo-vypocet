@@ -370,9 +370,9 @@ function renderRow(row, orderId, tbody) {
   // Calculated cells
   const calcDefs = [
     { key: "m3", cls: "" },
+    { key: "weight", cls: "col-weight" },
     { key: "priceNoDph", cls: "" },
     { key: "priceWithDph", cls: "" },
-    { key: "weight", cls: "col-weight" },
   ];
 
   calcDefs.forEach(({ key, cls }) => {
@@ -486,9 +486,9 @@ function updateOrderSubtotal(order) {
       <td colspan="4"></td>
       <td class="col-price no-print"></td>
       <td class="calc">${fmtM3(t.m3)}</td>
+      <td class="calc col-weight">${fmtKg(t.kg)}</td>
       <td class="calc">${fmtKc(t.noDph)}</td>
       <td class="calc">${fmtKc(t.withDph)}</td>
-      <td class="calc col-weight">${fmtKg(t.kg)}</td>
       <td class="no-print"></td>
       <td class="no-print"></td>
     </tr>
@@ -602,9 +602,9 @@ function createOrderSection(order) {
       <th>počet [ks]</th>
       <th class="col-price no-print" title="Vlastní cena Kč/m³ pro tento řádek – přepíše výchozí cenu materiálu">vl. cena</th>
       <th>m³</th>
+      <th class="col-weight">hmotnost [kg]</th>
       <th>bez daně</th>
       <th>s daní</th>
-      <th class="col-weight">hmotnost [kg]</th>
       <th class="col-hint no-print"></th>
       <th class="col-del no-print"></th>
     </tr></thead>
@@ -915,9 +915,9 @@ function exportPDF() {
         <td style="${S.tdInput}">${fmt(l, 2)}</td>
         <td style="${S.tdInput}">${fmt(n, 0)}</td>
         <td style="${S.td}">${fmtM3(c.m3)}</td>
+        ${inclWght ? `<td style="${S.td}">${fmtKg(c.weight)}</td>` : ""}
         <td style="${S.td}">${fmtKc(c.priceNoDph)}</td>
         <td style="${S.td}">${fmtKc(c.priceWithDph)}</td>
-        ${inclWght ? `<td style="${S.td}">${fmtKg(c.weight)}</td>` : ""}
       </tr>`;
     }).join("");
     if (!multiOrder) return orderRows;
@@ -925,9 +925,9 @@ function exportPDF() {
     const subtotal = `<tr>
       <td colspan="4" style="padding:4px 8px;font-size:11px;font-style:italic;color:#666;border-top:1px dashed #ccc;">Mezisoučet</td>
       <td style="${S.td};border-top:1px dashed #ccc;">${fmtM3(ot.m3)}</td>
+      ${inclWght ? `<td style="${S.td};border-top:1px dashed #ccc;">${fmtKg(ot.kg)}</td>` : ""}
       <td style="${S.td};border-top:1px dashed #ccc;">${fmtKc(ot.noDph)}</td>
       <td style="${S.td};border-top:1px dashed #ccc;">${fmtKc(ot.withDph)}</td>
-      ${inclWght ? `<td style="${S.td};border-top:1px dashed #ccc;">${fmtKg(ot.kg)}</td>` : ""}
     </tr>`;
     return orderHeader + orderRows + subtotal;
   }).join("");
@@ -985,14 +985,12 @@ function exportPDF() {
       <table style="width:100%;border-collapse:collapse;">
         <thead><tr style="background:#f8f8f8;">
           ${th("šířka [cm]")}${th("výška [cm]")}${th("délka [m]")}${th("počet [ks]")}
-          ${th("m³")}${th("bez daně")}${th("s daní")}
-          ${inclWght ? th("hmotnost [kg]") : ""}
+          ${th("m³")}${inclWght ? th("hmotnost [kg]") : ""}${th("bez daně")}${th("s daní")}
         </tr></thead>
         <tbody>${rowsHtml}</tbody>
         <tfoot><tr>
           <td colspan="4" style="padding:5px 8px;font-weight:700;font-size:14px;border-top:2px solid #1d6f42;">Celkem</td>
-          ${tfTd(fmtM3(totM3))}${tfTd(fmtKc(totNoDph))}${tfTd(fmtKc(totWithDph))}
-          ${inclWght ? tfTd(fmtKg(totKg)) : ""}
+          ${tfTd(fmtM3(totM3))}${inclWght ? tfTd(fmtKg(totKg)) : ""}${tfTd(fmtKc(totNoDph))}${tfTd(fmtKc(totWithDph))}
         </tr></tfoot>
       </table>
     </div>`;
@@ -1018,8 +1016,9 @@ function buildEmailText() {
   const pad = (s, n) => String(s).padStart(n);
 
   const colHeader = () => {
-    let h = `Šířka[cm]  Výška[cm]  Délka[m]  Počet     m³        Bez DPH       S DPH    `;
-    if (inclWght) h += `     Hmot.[kg]`;
+    let h = `Šířka[cm]  Výška[cm]  Délka[m]  Počet     m³     `;
+    if (inclWght) h += `   Hmot.[kg]`;
+    h += `   Bez DPH       S DPH    `;
     return h + "\n";
   };
 
@@ -1032,16 +1031,17 @@ function buildEmailText() {
       const c = calcRow(row);
       oM3 += c.m3; oNoDph += c.priceNoDph;
       oWithDph += c.priceWithDph; oKg += c.weight;
-      let r = [
+      let cols = [
         pad(parseDecimal(row.w), 9),
         pad(parseDecimal(row.h), 9),
         pad(parseDecimal(row.l), 8),
         pad(parseDecimal(row.n), 7),
         pad(fmtM3(c.m3), 10),
-        pad(fmtKc(c.priceNoDph), 13),
-        pad(fmtKc(c.priceWithDph), 12),
-      ].join("  ");
-      if (inclWght) r += "  " + pad(fmtKg(c.weight), 10);
+      ];
+      if (inclWght) cols.push(pad(fmtKg(c.weight), 10));
+      cols.push(pad(fmtKc(c.priceNoDph), 13));
+      cols.push(pad(fmtKc(c.priceWithDph), 12));
+      let r = cols.join("  ");
       body += r + "\n";
     });
     if (orders.length > 1) {
