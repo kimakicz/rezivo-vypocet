@@ -168,7 +168,15 @@ function normWH(row) {
 }
 
 function checkAvailability(row, mat) {
-  if (!mat?.sizes?.length) return null;
+  if (!mat?.sizes?.length) {
+    // BSH Si hranoly: větší rozměr (normalizovaná h) musí být násobek 4 cm
+    if (mat?.id === 3) {
+      const { w, h } = normWH(row);
+      if (w === 0 && h === 0) return null; // prázdný řádek
+      return h % 4 === 0 ? "ok" : "no";
+    }
+    return null;
+  }
   const { w, h } = normWH(row);
   const l = parseDecimal(row.l);
   if (w === 0 && h === 0 && l === 0) return null; // prázdný řádek
@@ -180,7 +188,17 @@ function checkAvailability(row, mat) {
 
 // Vrací text hintu pro avail-no řádek
 function getAvailHint(row, mat) {
-  if (!mat?.sizes?.length) return "";
+  if (!mat?.sizes?.length) {
+    if (mat?.id === 3) {
+      const { h } = normWH(row);
+      if (h % 4 !== 0) {
+        const lo = Math.floor(h / 4) * 4;
+        const hi = Math.ceil(h / 4) * 4;
+        return `Výška BSH musí být násobek 4 cm – nejbližší: ${lo > 0 ? lo + ", " : ""}${hi} cm`;
+      }
+    }
+    return "";
+  }
   const { w, h } = normWH(row);
   const l = parseDecimal(row.l);
 
