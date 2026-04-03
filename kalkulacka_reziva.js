@@ -91,6 +91,12 @@ function migrateMaterials(mats) {
     if (def.emailCode && !m.emailCode) m.emailCode = def.emailCode;
     if (def.sizes && !m.sizes) m.sizes = JSON.parse(JSON.stringify(def.sizes));
   });
+  // Přidej default materiály které v uložených datech chybí
+  DEFAULT_MATERIALS.forEach((def) => {
+    if (!mats.find((m) => m.id === def.id)) {
+      mats.push(JSON.parse(JSON.stringify(def)));
+    }
+  });
   return mats;
 }
 
@@ -654,21 +660,36 @@ function renameOrder(orderId, name) {
 // ═══════════════════════════════════════════════════
 //  MODAL: MANAGE MATERIALS
 // ═══════════════════════════════════════════════════
-function openModal() {
+function openSettings() {
   materials = loadMaterials(); // vždy čerstvá uložená data, ne dočasné session overrides
   renderMaterialTable();
   renderSizesSection();
-  document.getElementById("modalOverlay").classList.add("open");
+  // uložit původní DPH pro případ zrušení
+  const dphEl = document.getElementById("dphInput");
+  dphEl._savedValue = dphEl.value;
+  document.getElementById("settingsModalOverlay").classList.add("open");
 }
 
-function closeModal() {
-  document.getElementById("modalOverlay").classList.remove("open");
+function saveSettings() {
+  saveMaterials();
+  document.getElementById("settingsModalOverlay").classList.remove("open");
   renderMaterialSelect();
   recalcAll();
 }
 
-function closeModalOutside(e) {
-  if (e.target === document.getElementById("modalOverlay")) closeModal();
+function cancelSettings() {
+  // vrátit DPH na původní hodnotu
+  const dphEl = document.getElementById("dphInput");
+  dphEl.value = dphEl._savedValue || "21";
+  // reload materials z localStorage (zahodí neuložené změny)
+  materials = loadMaterials();
+  document.getElementById("settingsModalOverlay").classList.remove("open");
+  renderMaterialSelect();
+  recalcAll();
+}
+
+function closeSettingsOutside(e) {
+  if (e.target === e.currentTarget) cancelSettings();
 }
 
 function renderMaterialTable() {
@@ -746,7 +767,7 @@ function renderSizesSection() {
 
   const matsWithSizes = materials.filter((m) => Array.isArray(m.sizes));
   const section = document.getElementById("sizesSection");
-  section.style.display = matsWithSizes.length ? "" : "none";
+  section.hidden = !matsWithSizes.length;
   if (!matsWithSizes.length) return;
 
   matsWithSizes.forEach((m) => {
