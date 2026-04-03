@@ -12,6 +12,7 @@
         <div class="app-header no-print">
             <h1>Kalkulačka řeziva</h1>
             <span class="subtitle">kubatura · ceny · hmotnost</span>
+            <button class="btn-ghost no-print" id="btnSettings" onclick="openSettings()" title="Nastavení">⚙ Nastavení</button>
             <button
                 class="btn-theme no-print"
                 id="themeToggle"
@@ -79,28 +80,6 @@
             />
             <span class="unit">kg/m³</span>
 
-            <div class="sep"></div>
-
-            <span class="lbl">DPH</span>
-            <input
-                type="number"
-                id="dphInput"
-                min="0"
-                max="100"
-                step="1"
-                value="21"
-                style="width: 54px"
-                inputmode="numeric"
-                title="Sazba DPH (%)"
-                onchange="recalcAll()"
-            />
-            <span class="unit">%</span>
-
-            <div class="sep"></div>
-
-            <button class="btn-ghost" onclick="openModal()">
-                Spravovat typy
-            </button>
         </div>
 
         <div class="container">
@@ -165,14 +144,17 @@
         <!-- ── Toast notification ── -->
         <div class="toast" id="toast"></div>
 
-        <!-- ── Modal: Manage materials ── -->
+        <!-- ── Modal: Nastavení ── -->
         <div
             class="modal-overlay"
-            id="modalOverlay"
-            onclick="closeModalOutside(event)"
+            id="settingsModalOverlay"
+            onclick="closeSettingsOutside(event)"
         >
             <div class="modal">
-                <h2>Spravovat typy materiálů</h2>
+                <h2>Nastavení</h2>
+
+                <!-- Sekce: Materiály -->
+                <h3 class="settings-section-title">Materiály</h3>
 
                 <div class="add-form">
                     <div class="field">
@@ -212,10 +194,10 @@
                             id="newDensity"
                             placeholder="550"
                             min="0"
-                            step="10"
+                            step="10"mmm
                             class="input-density"
                         />
-                    </div>
+                    </div>bb
                     <button
                         class="btn-primary"
                         onclick="addMaterial()"
@@ -238,14 +220,15 @@
                     <tbody id="materialTableBody"></tbody>
                 </table>
 
-                <div class="sizes-section" id="sizesSection">
-                    <h3 class="sizes-heading">
+                <details class="sizes-details" id="sizesSection">
+                    <summary class="sizes-heading">
                         Dostupné rozměry pro:
                         <select
                             id="sizesMaterialSelect"
                             onchange="renderSizesTable()"
+                            onclick="event.stopPropagation()"
                         ></select>
-                    </h3>
+                    </summary>
                     <table class="sizes-table">
                         <thead>
                             <tr>
@@ -289,11 +272,34 @@
                             + Přidat
                         </button>
                     </div>
+                </details>
+
+                <!-- Sekce: DPH -->
+                <div class="settings-group">
+                    <span class="settings-group-label">DPH</span>
+                    <div class="settings-group-input">
+                        <input
+                            type="number"
+                            id="dphInput"
+                            min="0"
+                            max="100"
+                            step="1"
+                            value="21"
+                            style="width: 54px"
+                            inputmode="numeric"
+                            title="Sazba DPH (%)"
+                            onchange="recalcAll()"
+                        />
+                        <span class="unit">%</span>
+                    </div>
                 </div>
 
-                <div class="modal-footer">
-                    <button class="btn-primary" onclick="closeModal()">
-                        Zavřít
+                <div class="modal-footer settings-footer">
+                    <button class="btn-action" onclick="cancelSettings()">
+                        Zrušit
+                    </button>
+                    <button class="btn-primary" onclick="saveSettings()">
+                        Uložit
                     </button>
                 </div>
             </div>

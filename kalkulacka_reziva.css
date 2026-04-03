@@ -130,9 +130,14 @@ button, input, select, label, a {
   color: var(--text-faint);
 }
 
+/* Settings button in header */
+#btnSettings {
+  margin-left: auto;
+  font-size: 13px;
+}
+
 /* Dark mode toggle button */
 .btn-theme {
-  margin-left: auto;
   padding: 3px 8px;
   border: 1px solid var(--border);
   border-radius: 3px;
@@ -554,6 +559,59 @@ tbody td.td-del {
   border-top: 1px solid var(--border);
 }
 
+.settings-footer { gap: 8px; }
+
+/* ── Settings modal sections ───────────────────── */
+.settings-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.settings-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.settings-group-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.settings-group-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.settings-group-input input {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-panel);
+  text-align: right;
+}
+
+.settings-group-input input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-focus);
+}
+
+.settings-group-input .unit {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
 /* ── Email modal ─────────────────────────────────── */
 .email-format-row {
   display: flex;
@@ -648,8 +706,8 @@ tbody tr.has-price-override {
 }
 [data-theme="dark"] .td-hint { color: var(--danger); }
 
-/* ── Sizes section (modal) ───────────────────────── */
-.sizes-section {
+/* ── Sizes section (modal, <details>) ────────────── */
+.sizes-details {
   margin-top: 20px;
   padding-top: 16px;
   border-top: 1px solid var(--border);
@@ -663,6 +721,19 @@ tbody tr.has-price-override {
   display: flex;
   align-items: center;
   gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+.sizes-heading::-webkit-details-marker { display: none; }
+.sizes-heading::before {
+  content: "▶";
+  font-size: 10px;
+  color: var(--text-muted);
+  transition: transform .15s;
+}
+.sizes-details[open] > .sizes-heading::before {
+  transform: rotate(90deg);
 }
 .sizes-heading select {
   font-size: 13px;
