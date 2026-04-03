@@ -1,6 +1,8 @@
 // ═══════════════════════════════════════════════════
 //  DATA
 // ═══════════════════════════════════════════════════
+const BSH_SI_ID = 3;
+
 const DEFAULT_MATERIALS = [
   { id: 1, name: "Stavební řezivo", price: 11500, density: 550 },
   {
@@ -170,7 +172,7 @@ function normWH(row) {
 function checkAvailability(row, mat) {
   if (!mat?.sizes?.length) {
     // BSH Si hranoly: větší rozměr (normalizovaná h) musí být násobek 4 cm
-    if (mat?.id === 3) {
+    if (mat?.id === BSH_SI_ID) {
       const { w, h } = normWH(row);
       if (w === 0 && h === 0) return null; // prázdný řádek
       return h % 4 === 0 ? "ok" : "no";
@@ -189,7 +191,7 @@ function checkAvailability(row, mat) {
 // Vrací text hintu pro avail-no řádek
 function getAvailHint(row, mat) {
   if (!mat?.sizes?.length) {
-    if (mat?.id === 3) {
+    if (mat?.id === BSH_SI_ID) {
       const { h } = normWH(row);
       if (h % 4 !== 0) {
         const lo = Math.floor(h / 4) * 4;
@@ -477,10 +479,10 @@ function calcOrderTotals(order) {
   return { m3, noDph, withDph, kg };
 }
 
-function updateOrderSubtotal(order) {
+function updateOrderSubtotal(order, totals) {
   const tfoot = document.querySelector(`.order-section[data-order-id="${order.id}"] tfoot`);
   if (!tfoot) return;
-  const t = calcOrderTotals(order);
+  const t = totals ?? calcOrderTotals(order);
   tfoot.innerHTML = `
     <tr class="order-subtotal">
       <td colspan="4"></td>
@@ -505,7 +507,7 @@ function recalcSummary() {
     const t = calcOrderTotals(order);
     m3 += t.m3; noDph += t.noDph;
     withDph += t.withDph; kg += t.kg;
-    updateOrderSubtotal(order);
+    updateOrderSubtotal(order, t);
   });
   document.getElementById("sumM3").textContent = fmtM3(m3);
   document.getElementById("sumNoDph").textContent = fmtKc(noDph);
@@ -647,7 +649,6 @@ function renameOrder(orderId, name) {
   order.name = name;
   const printEl = document.querySelector(`.order-section[data-order-id="${orderId}"] .order-name-print`);
   if (printEl) printEl.textContent = name;
-  updateOrderSubtotal(order);
 }
 
 // ═══════════════════════════════════════════════════
@@ -1205,7 +1206,7 @@ function buildProductionOrderText() {
       const h = parseDecimal(r.h);
       const l = parseDecimal(r.l);
       const n = parseDecimal(r.n);
-      const m3 = (w / 100) * (h / 100) * l * n;
+      const { m3 } = calcRow(r);
       orderM3 += m3;
       const lCm = Math.round(l * 100);
       body += `${w} \u00d7 ${h} \u00d7 ${lCm} cm  \u2013  ${n} ks\n`;
