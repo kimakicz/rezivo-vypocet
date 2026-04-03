@@ -2,6 +2,8 @@
 
 Jednoduchá webová aplikace pro výpočet kubatury, ceny a hmotnosti řeziva. Určena pro české uživatele ve stavebnictví a dřevovýrobě.
 
+Dostupné na https://kalkulacka.samyco.cz
+
 **Plně klientská aplikace** — žádný backend, žádná instalace, funguje přímo v prohlížeči.
 
 ---
