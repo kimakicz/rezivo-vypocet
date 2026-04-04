@@ -177,7 +177,7 @@
         >
             <div class="modal">
                 <h2>Nastavení</h2>
-
+                <div class="modal-body">
                 <!-- Sekce: Materiály -->
                 <h3 class="settings-section-title">Materiály</h3>
 
@@ -363,6 +363,7 @@
                     </div>
                 </div>
 
+                </div><!-- /.modal-body -->
                 <div class="modal-footer settings-footer">
                     <button class="btn-action" onclick="cancelSettings()">
                         Zrušit
@@ -382,7 +383,7 @@
         >
             <div class="modal" id="emailModal">
                 <h2>Email / Cenová nabídka</h2>
-
+                <div class="modal-body">
                 <div class="email-format-row">
                     <label for="emailFormat">Formát:</label>
                     <select id="emailFormat" onchange="onEmailFormatChange()">
@@ -398,6 +399,7 @@
                     readonly
                 ></textarea>
 
+                </div><!-- /.modal-body -->
                 <div class="modal-footer email-modal-footer">
                     <span class="copy-status" id="copyStatus"></span>
                     <button
@@ -429,7 +431,9 @@
         >
             <div class="modal modal-history">
                 <h2>Historie výpočtů</h2>
+                <div class="modal-body">
                 <ul class="history-list" id="historyList"></ul>
+                </div><!-- /.modal-body -->
                 <div class="modal-footer history-modal-footer">
                     <button class="btn-danger" onclick="clearHistory()">
                         Smazat vše
