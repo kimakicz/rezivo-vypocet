@@ -347,7 +347,7 @@ tbody td {
 tbody td input[type="number"],
 tbody td input[type="text"] {
     width: 100%;
-    min-width: 72px;
+    min-width: 50px;
     padding: 6px 10px;
     border: none;
     outline: none;
@@ -773,6 +773,16 @@ tbody td input.avail-no {
 [data-theme="dark"] tbody td input.avail-no {
     background: rgba(248, 113, 113, 0.1) !important;
     box-shadow: inset 0 0 0 1px rgba(248, 113, 113, 0.45);
+}
+
+/* ── Nulový/prázdný počet kusů ───── */
+tbody td input.qty-zero {
+    background: rgba(234, 179, 8, 0.12) !important;
+    box-shadow: inset 0 0 0 1px rgba(234, 179, 8, 0.5);
+}
+[data-theme="dark"] tbody td input.qty-zero {
+    background: rgba(250, 204, 21, 0.12) !important;
+    box-shadow: inset 0 0 0 1px rgba(250, 204, 21, 0.45);
 }
 
 /* ── Sloupec vlastní ceny Kč/m³ (podrobné ceny) ──── */
@@ -1394,7 +1404,8 @@ tbody tr.has-price-override {
 
     /* Reset availability colors for print */
     tbody td input.avail-ok,
-    tbody td input.avail-no {
+    tbody td input.avail-no,
+    tbody td input.qty-zero {
         background: transparent !important;
         box-shadow: none !important;
     }

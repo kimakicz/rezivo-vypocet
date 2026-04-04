@@ -104,7 +104,8 @@ function migrateMaterials(mats) {
     if (!def) return;
     if (def.emailCode && !m.emailCode) m.emailCode = def.emailCode;
     if (def.sizes && !m.sizes) m.sizes = JSON.parse(JSON.stringify(def.sizes));
-    if (def.speciesId !== undefined && m.speciesId === undefined) m.speciesId = def.speciesId;
+    if (def.speciesId !== undefined && m.speciesId === undefined)
+      m.speciesId = def.speciesId;
   });
   // Přidej default materiály které v uložených datech chybí
   DEFAULT_MATERIALS.forEach((def) => {
@@ -579,6 +580,15 @@ function updateRowCalc(row) {
   const tdH = tr.querySelector(".td-hint");
   if (tdH) tdH.textContent = hint;
 
+  // Zvýraznění nulového/prázdného počtu kusů
+  const w = parseDecimal(row.w);
+  const h = parseDecimal(row.h);
+  const l = parseDecimal(row.l);
+  const n = parseDecimal(row.n);
+  const hasDims = w > 0 || h > 0 || l > 0;
+  const nInp = tr.querySelector('input[data-field="n"]');
+  if (nInp) nInp.classList.toggle("qty-zero", hasDims && n === 0);
+
   // Vizuální označení řádku s vlastní cenou
   tr.classList.toggle(
     "has-price-override",
@@ -608,7 +618,10 @@ function clearAll() {
   nextRowId = 1;
   document.getElementById("ordersContainer").innerHTML = "";
   const inp = document.getElementById("zakazInput");
-  if (inp) { inp.value = ""; onZakazChange(); }
+  if (inp) {
+    inp.value = "";
+    onZakazChange();
+  }
   addOrder("Zakázka 1");
 }
 
@@ -1257,7 +1270,7 @@ function exportPDF() {
     </div>`;
 
   const html = `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:11px;color:#111;background:#fff;color-scheme:light;">
+    <div style="width:190mm;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:11px;color:#111;background:#fff;color-scheme:light;">
 
       <!-- Hlavička firmy -->
       <div style="display:flex;justify-content:space-between;align-items:stretch;background:#1d6f42;color:#fff;border-radius:6px 6px 0 0;margin-bottom:0;">
@@ -1320,7 +1333,11 @@ function exportPDF() {
     .set({
       margin: [10, 10, 10, 10],
       filename,
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: 900 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     })
     .save();
