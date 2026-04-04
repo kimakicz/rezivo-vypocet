@@ -4,7 +4,7 @@
 const BSH_SI_ID = 3;
 
 const DEFAULT_MATERIALS = [
-  { id: 1, name: "Stavební řezivo", price: 11500, density: 550 },
+  { id: 1, name: "Stavební řezivo", price: 11500, density: 850 },
   {
     id: 2,
     name: "KVH hranoly",
@@ -62,14 +62,26 @@ const DEFAULT_MATERIALS = [
   },
 ];
 
+const DEFAULT_SPECIES = [
+  { id: 1, name: "Smrk – syrový", density: 850 },
+  { id: 2, name: "Smrk – sušený", density: 450 },
+  { id: 3, name: "Borovice – syrová", density: 920 },
+  { id: 4, name: "Borovice – sušená", density: 510 },
+  { id: 5, name: "Modřín – syrový", density: 1000 },
+  { id: 6, name: "Modřín – sušený", density: 570 },
+  { id: 7, name: "Dub – syrový", density: 1050 },
+  { id: 8, name: "Dub – sušený", density: 690 },
+];
+
 let materials = loadMaterials();
+let species = loadSpecies();
 let selectedMatId = materials[0]?.id ?? 1;
 let orders = []; // [{ id, name, rows: [{ id, w, h, l, n, price }] }]
 let nextOrderId = 1;
 let nextRowId = 1;
 let nextMatId = Math.max(...materials.map((m) => m.id)) + 1;
 let calcHistory = [];
-let sessionPriceOverride = null;   // dočasná cena pro aktuální výpočet (neuloží se)
+let sessionPriceOverride = null; // dočasná cena pro aktuální výpočet (neuloží se)
 let sessionDensityOverride = null; // dočasná hustota pro aktuální výpočet (neuloží se)
 
 // ═══════════════════════════════════════════════════
@@ -97,11 +109,40 @@ function migrateMaterials(mats) {
       mats.push(JSON.parse(JSON.stringify(def)));
     }
   });
+  // Migrace: přiřadit speciesId podle shody hustoty
+  mats.forEach((m) => {
+    if (m.speciesId === undefined) {
+      const sp = DEFAULT_SPECIES.find((s) => s.density === m.density);
+      m.speciesId = sp ? sp.id : null;
+    }
+  });
   return mats;
 }
 
 function saveMaterials() {
   localStorage.setItem("rezivo_materials", JSON.stringify(materials));
+}
+
+function loadSpecies() {
+  try {
+    const s = localStorage.getItem("rezivo_species");
+    if (s) {
+      const custom = JSON.parse(s);
+      const merged = DEFAULT_SPECIES.map((d) => JSON.parse(JSON.stringify(d)));
+      custom.forEach((c) => {
+        if (!merged.find((m) => m.id === c.id)) merged.push(c);
+      });
+      return merged;
+    }
+  } catch (_) {}
+  return DEFAULT_SPECIES.map((d) => JSON.parse(JSON.stringify(d)));
+}
+
+function saveSpecies() {
+  const custom = species.filter(
+    (s) => !DEFAULT_SPECIES.find((d) => d.id === s.id),
+  );
+  localStorage.setItem("rezivo_species", JSON.stringify(custom));
 }
 
 // ═══════════════════════════════════════════════════
@@ -128,7 +169,10 @@ function fmt(n, dec = 0) {
 }
 
 function fmtDim(n) {
-  return n.toLocaleString("cs-CZ", { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+  return n.toLocaleString("cs-CZ", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+  });
 }
 
 function fmtM3(n) {
@@ -236,7 +280,8 @@ function calcRow(row) {
   const m3 = (w / 100) * (h / 100) * l * n;
   const mat = getMaterial();
   const dph = getDph() / 100;
-  const effPrice = parseDecimal(row.price) || (sessionPriceOverride ?? mat.price);
+  const effPrice =
+    parseDecimal(row.price) || (sessionPriceOverride ?? mat.price);
   const effDensity = sessionDensityOverride ?? mat.density;
   return {
     m3,
@@ -266,7 +311,22 @@ function syncMaterialInputs() {
   const mat = getMaterial();
   if (!mat) return;
   document.getElementById("priceInput").value = mat.price;
-  document.getElementById("densityInput").value = mat.density;
+  // Sync species select
+  const sel = document.getElementById("speciesSelect");
+  if (mat.speciesId != null) {
+    sel.value = mat.speciesId;
+  } else {
+    sel.value = "custom";
+  }
+  // Show/hide density input, update label
+  const densityInput = document.getElementById("densityInput");
+  if (sel.value === "custom") {
+    densityInput.style.display = "";
+    densityInput.value = mat.density;
+  } else {
+    densityInput.style.display = "none";
+  }
+  updateDensityLabel();
 }
 
 function onMaterialChange() {
@@ -279,14 +339,77 @@ function onMaterialChange() {
 }
 
 function onPriceChange() {
-  sessionPriceOverride = parseFloat(document.getElementById("priceInput").value) || null;
+  sessionPriceOverride =
+    parseFloat(document.getElementById("priceInput").value) || null;
   updatePriceInputPlaceholders();
   recalcAll();
 }
 
 function onDensityChange() {
-  sessionDensityOverride = parseFloat(document.getElementById("densityInput").value) || null;
+  sessionDensityOverride =
+    parseFloat(document.getElementById("densityInput").value) || null;
+  updateDensityLabel();
   recalcAll();
+}
+
+function buildSpeciesOptions(selectedId) {
+  let html = "";
+  species.forEach((sp) => {
+    const sel = sp.id === selectedId ? " selected" : "";
+    html += `<option value="${sp.id}"${sel}>${escHtml(sp.name)} (${sp.density})</option>`;
+  });
+  const customSel = selectedId == null ? " selected" : "";
+  html += `<option value="custom"${customSel}>Vlastní…</option>`;
+  return html;
+}
+
+function renderSpeciesSelect() {
+  const mat = getMaterial();
+  const sel = document.getElementById("speciesSelect");
+  sel.innerHTML = buildSpeciesOptions(mat?.speciesId ?? null);
+  updateToolbarDensityVisibility();
+  updateDensityLabel();
+}
+
+function onSpeciesChange() {
+  const sel = document.getElementById("speciesSelect");
+  const densityInput = document.getElementById("densityInput");
+  if (sel.value === "custom") {
+    densityInput.style.display = "";
+    const mat = getMaterial();
+    densityInput.value = sessionDensityOverride ?? mat.density;
+    sessionDensityOverride = parseFloat(densityInput.value) || mat.density;
+  } else {
+    densityInput.style.display = "none";
+    const sp = species.find((s) => s.id === parseInt(sel.value));
+    const mat = getMaterial();
+    if (mat.speciesId === sp?.id) {
+      sessionDensityOverride = null;
+    } else {
+      sessionDensityOverride = sp ? sp.density : null;
+    }
+  }
+  updateDensityLabel();
+  recalcAll();
+}
+
+function updateDensityLabel() {
+  const label = document.getElementById("densityLabel");
+  if (!label) return;
+  const sel = document.getElementById("speciesSelect");
+  if (sel.value === "custom") {
+    const val = sessionDensityOverride ?? getMaterial().density;
+    label.textContent = val + " kg/m³";
+  } else {
+    const sp = species.find((s) => s.id === parseInt(sel.value));
+    label.textContent = sp ? sp.density + " kg/m³" : "";
+  }
+}
+
+function updateToolbarDensityVisibility() {
+  const sel = document.getElementById("speciesSelect");
+  const densityInput = document.getElementById("densityInput");
+  densityInput.style.display = sel.value === "custom" ? "" : "none";
 }
 
 // ═══════════════════════════════════════════════════
@@ -300,7 +423,9 @@ function addRow(orderId, w = "", h = "", l = "", n = "") {
   const id = nextRowId++;
   const row = { id, w, h, l, n, price: null };
   order.rows.push(row);
-  const tbody = document.querySelector(`.order-section[data-order-id="${orderId}"] tbody`);
+  const tbody = document.querySelector(
+    `.order-section[data-order-id="${orderId}"] tbody`,
+  );
   if (tbody) renderRow(row, orderId, tbody);
   updateTabIndexes();
   recalcSummary();
@@ -317,7 +442,14 @@ function renderRow(row, orderId, tbody) {
     { key: "w", placeholder: "0", type: "text", inputmode: "decimal" },
     { key: "h", placeholder: "0", type: "text", inputmode: "decimal" },
     { key: "l", placeholder: "0,00", type: "text", inputmode: "decimal" },
-    { key: "n", placeholder: "1", type: "number", step: "1", min: "0", inputmode: "numeric" },
+    {
+      key: "n",
+      placeholder: "1",
+      type: "number",
+      step: "1",
+      min: "0",
+      inputmode: "numeric",
+    },
   ];
 
   specs.forEach((s) => {
@@ -447,14 +579,19 @@ function updateRowCalc(row) {
   // Vizuální označení řádku s vlastní cenou
   tr.classList.toggle(
     "has-price-override",
-    row.price !== null && row.price !== undefined && String(row.price).trim() !== ""
+    row.price !== null &&
+      row.price !== undefined &&
+      String(row.price).trim() !== "",
   );
 }
 
 function deleteRow(id) {
   for (const order of orders) {
     const idx = order.rows.findIndex((r) => r.id === id);
-    if (idx !== -1) { order.rows.splice(idx, 1); break; }
+    if (idx !== -1) {
+      order.rows.splice(idx, 1);
+      break;
+    }
   }
   document.querySelector(`tr[data-id="${id}"]`)?.remove();
   updateTabIndexes();
@@ -476,17 +613,24 @@ function recalcAll() {
 }
 
 function calcOrderTotals(order) {
-  let m3 = 0, noDph = 0, withDph = 0, kg = 0;
+  let m3 = 0,
+    noDph = 0,
+    withDph = 0,
+    kg = 0;
   order.rows.forEach((row) => {
     const c = calcRow(row);
-    m3 += c.m3; noDph += c.priceNoDph;
-    withDph += c.priceWithDph; kg += c.weight;
+    m3 += c.m3;
+    noDph += c.priceNoDph;
+    withDph += c.priceWithDph;
+    kg += c.weight;
   });
   return { m3, noDph, withDph, kg };
 }
 
 function updateOrderSubtotal(order, totals) {
-  const tfoot = document.querySelector(`.order-section[data-order-id="${order.id}"] tfoot`);
+  const tfoot = document.querySelector(
+    `.order-section[data-order-id="${order.id}"] tfoot`,
+  );
   if (!tfoot) return;
   const t = totals ?? calcOrderTotals(order);
   tfoot.innerHTML = `
@@ -508,11 +652,16 @@ function updateOrderSubtotal(order, totals) {
 }
 
 function recalcSummary() {
-  let m3 = 0, noDph = 0, withDph = 0, kg = 0;
+  let m3 = 0,
+    noDph = 0,
+    withDph = 0,
+    kg = 0;
   orders.forEach((order) => {
     const t = calcOrderTotals(order);
-    m3 += t.m3; noDph += t.noDph;
-    withDph += t.withDph; kg += t.kg;
+    m3 += t.m3;
+    noDph += t.noDph;
+    withDph += t.withDph;
+    kg += t.kg;
     updateOrderSubtotal(order, t);
   });
   document.getElementById("sumM3").textContent = fmtM3(m3);
@@ -532,7 +681,9 @@ function updateTabIndexes() {
   orders.forEach((order) => {
     order.rows.forEach((row) => {
       FIELDS.forEach((f) => {
-        const inp = document.querySelector(`tr[data-id="${row.id}"] input[data-field="${f}"]`);
+        const inp = document.querySelector(
+          `tr[data-id="${row.id}"] input[data-field="${f}"]`,
+        );
         if (inp) inp.tabIndex = ti++;
       });
     });
@@ -549,7 +700,9 @@ function onInputKeyDown(e) {
 
   if (!isLastF) {
     const nextField = FIELDS[FIELDS.indexOf(field) + 1];
-    document.querySelector(`tr[data-id="${rowId}"] input[data-field="${nextField}"]`)?.focus();
+    document
+      .querySelector(`tr[data-id="${rowId}"] input[data-field="${nextField}"]`)
+      ?.focus();
     return;
   }
 
@@ -567,13 +720,19 @@ function onInputKeyDown(e) {
   } else if (isLastRowInOrder) {
     const nextOrder = orders[orders.findIndex((o) => o.id === orderId) + 1];
     if (nextOrder?.rows.length) {
-      document.querySelector(`tr[data-id="${nextOrder.rows[0].id}"] input[data-field="w"]`)?.focus();
+      document
+        .querySelector(
+          `tr[data-id="${nextOrder.rows[0].id}"] input[data-field="w"]`,
+        )
+        ?.focus();
     }
   } else {
     const idx = order.rows.findIndex((r) => r.id === rowId);
     const nxt = order.rows[idx + 1];
     if (nxt) {
-      document.querySelector(`tr[data-id="${nxt.id}"] input[data-field="w"]`)?.focus();
+      document
+        .querySelector(`tr[data-id="${nxt.id}"] input[data-field="w"]`)
+        ?.focus();
     }
   }
 }
@@ -631,7 +790,9 @@ function addOrder(name) {
   const id = nextOrderId++;
   const order = { id, name: name ?? `Zakázka ${id}`, rows: [] };
   orders.push(order);
-  document.getElementById("ordersContainer").appendChild(createOrderSection(order));
+  document
+    .getElementById("ordersContainer")
+    .appendChild(createOrderSection(order));
   addRow(id);
 }
 
@@ -641,10 +802,17 @@ function deleteOrder(orderId) {
     return;
   }
   const order = orders.find((o) => o.id === orderId);
-  if (order?.rows.length &&
-      !confirm(`Opravdu smazat zakázku „${order.name}" včetně ${order.rows.length} řádků?`)) return;
+  if (
+    order?.rows.length &&
+    !confirm(
+      `Opravdu smazat zakázku „${order.name}" včetně ${order.rows.length} řádků?`,
+    )
+  )
+    return;
   orders = orders.filter((o) => o.id !== orderId);
-  document.querySelector(`.order-section[data-order-id="${orderId}"]`)?.remove();
+  document
+    .querySelector(`.order-section[data-order-id="${orderId}"]`)
+    ?.remove();
   updateTabIndexes();
   recalcSummary();
 }
@@ -653,7 +821,9 @@ function renameOrder(orderId, name) {
   const order = orders.find((o) => o.id === orderId);
   if (!order) return;
   order.name = name;
-  const printEl = document.querySelector(`.order-section[data-order-id="${orderId}"] .order-name-print`);
+  const printEl = document.querySelector(
+    `.order-section[data-order-id="${orderId}"] .order-name-print`,
+  );
   if (printEl) printEl.textContent = name;
 }
 
@@ -661,10 +831,11 @@ function renameOrder(orderId, name) {
 //  MODAL: MANAGE MATERIALS
 // ═══════════════════════════════════════════════════
 function openSettings() {
-  materials = loadMaterials(); // vždy čerstvá uložená data, ne dočasné session overrides
+  materials = loadMaterials();
+  species = loadSpecies();
   renderMaterialTable();
   renderSizesSection();
-  // uložit původní DPH pro případ zrušení
+  renderSpeciesSettingsTable();
   const dphEl = document.getElementById("dphInput");
   dphEl._savedValue = dphEl.value;
   document.getElementById("settingsModalOverlay").classList.add("open");
@@ -672,19 +843,21 @@ function openSettings() {
 
 function saveSettings() {
   saveMaterials();
+  saveSpecies();
   document.getElementById("settingsModalOverlay").classList.remove("open");
   renderMaterialSelect();
+  renderSpeciesSelect();
   recalcAll();
 }
 
 function cancelSettings() {
-  // vrátit DPH na původní hodnotu
   const dphEl = document.getElementById("dphInput");
   dphEl.value = dphEl._savedValue || "21";
-  // reload materials z localStorage (zahodí neuložené změny)
   materials = loadMaterials();
+  species = loadSpecies();
   document.getElementById("settingsModalOverlay").classList.remove("open");
   renderMaterialSelect();
+  renderSpeciesSelect();
   recalcAll();
 }
 
@@ -697,16 +870,36 @@ function renderMaterialTable() {
   tbody.innerHTML = "";
   materials.forEach((m) => {
     const tr = document.createElement("tr");
+    const isCustom = m.speciesId == null;
+    const sp = !isCustom ? species.find((s) => s.id === m.speciesId) : null;
     tr.innerHTML = `
       <td><input type="text"   value="${escHtml(m.name)}"          data-mid="${m.id}" data-field="name"      onchange="updateMat(this)"></td>
       <td><input type="text"   value="${escHtml(m.emailCode || "")}" data-mid="${m.id}" data-field="emailCode" onchange="updateMat(this)" placeholder="zkratka" maxlength="30" style="width:90px"></td>
       <td><input type="number" value="${m.price}"   min="0" step="100" data-mid="${m.id}" data-field="price"   onchange="updateMat(this)" style="text-align:right"></td>
-      <td><input type="number" value="${m.density}" min="0" step="10"  data-mid="${m.id}" data-field="density" onchange="updateMat(this)" style="text-align:right"></td>
+      <td class="species-cell">
+        <select data-mid="${m.id}" data-field="speciesId" onchange="updateMat(this)">
+          ${buildSpeciesOptions(m.speciesId)}
+        </select>
+        ${
+          isCustom
+            ? `<input type="number" value="${m.density}" min="0" step="10" data-mid="${m.id}" data-field="density" onchange="updateMat(this)" style="text-align:right;width:80px">`
+            : `<span class="density-info">${sp ? sp.density + " kg/m³" : ""}</span>`
+        }
+      </td>
       <td><button class="btn-del" onclick="deleteMaterial(${m.id})" tabindex="-1"
            ${materials.length <= 1 ? 'disabled title="Nelze smazat poslední typ"' : ""}>×</button></td>
     `;
     tbody.appendChild(tr);
   });
+  // Update add-form species select
+  const addSel = document.getElementById("newSpeciesId");
+  if (addSel) {
+    const prev = addSel.value;
+    addSel.innerHTML = buildSpeciesOptions(species[0]?.id ?? null);
+    if (prev && addSel.querySelector(`option[value="${prev}"]`))
+      addSel.value = prev;
+    onNewSpeciesChange();
+  }
 }
 
 function escHtml(s) {
@@ -725,6 +918,18 @@ function updateMat(input) {
   if (f === "name") mat.name = input.value;
   if (f === "emailCode") mat.emailCode = input.value;
   if (f === "price") mat.price = parseFloat(input.value) || 0;
+  if (f === "speciesId") {
+    if (input.value === "custom") {
+      mat.speciesId = null;
+    } else {
+      mat.speciesId = parseInt(input.value);
+      const sp = species.find((s) => s.id === mat.speciesId);
+      if (sp) mat.density = sp.density;
+    }
+    renderMaterialTable();
+    saveMaterials();
+    return;
+  }
   if (f === "density") mat.density = parseFloat(input.value) || 0;
   saveMaterials();
 }
@@ -733,12 +938,28 @@ function addMaterial() {
   const name = document.getElementById("newName").value.trim();
   const emailCode = document.getElementById("newEmailCode").value.trim();
   const price = parseFloat(document.getElementById("newPrice").value) || 0;
-  const density = parseFloat(document.getElementById("newDensity").value) || 0;
+  const speciesSel = document.getElementById("newSpeciesId");
+  let speciesId = null;
+  let density = 0;
+  if (speciesSel.value === "custom") {
+    density = parseFloat(document.getElementById("newDensity").value) || 0;
+  } else {
+    speciesId = parseInt(speciesSel.value);
+    const sp = species.find((s) => s.id === speciesId);
+    density = sp ? sp.density : 0;
+  }
   if (!name) {
     alert("Zadejte název materiálu.");
     return;
   }
-  materials.push({ id: nextMatId++, name, emailCode, price, density });
+  materials.push({
+    id: nextMatId++,
+    name,
+    emailCode,
+    price,
+    density,
+    speciesId,
+  });
   saveMaterials();
   document.getElementById("newName").value = "";
   document.getElementById("newEmailCode").value = "";
@@ -746,6 +967,13 @@ function addMaterial() {
   document.getElementById("newDensity").value = "";
   renderMaterialTable();
   renderSizesSection();
+}
+
+function onNewSpeciesChange() {
+  const sel = document.getElementById("newSpeciesId");
+  const densityField = document.getElementById("newDensityField");
+  if (densityField)
+    densityField.style.display = sel.value === "custom" ? "" : "none";
 }
 
 function deleteMaterial(id) {
@@ -864,6 +1092,56 @@ function deleteSize(matId, idx) {
 }
 
 // ═══════════════════════════════════════════════════
+//  SPECIES MANAGEMENT
+// ═══════════════════════════════════════════════════
+function renderSpeciesSettingsTable() {
+  const tbody = document.getElementById("speciesTableBody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  species.forEach((sp) => {
+    const isDefault = !!DEFAULT_SPECIES.find((d) => d.id === sp.id);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escHtml(sp.name)}</td>
+      <td style="text-align:right">${sp.density}</td>
+      <td>${isDefault ? "" : `<button class="btn-del" onclick="deleteSpecies(${sp.id})" tabindex="-1">×</button>`}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function addSpecies() {
+  const name = document.getElementById("newSpeciesName").value.trim();
+  const density =
+    parseFloat(document.getElementById("newSpeciesDensity").value) || 0;
+  if (!name) {
+    alert("Zadejte název dřeviny.");
+    return;
+  }
+  if (density <= 0) {
+    alert("Zadejte hustotu.");
+    return;
+  }
+  const newId = Math.max(...species.map((s) => s.id), 100) + 1;
+  species.push({ id: newId, name, density });
+  document.getElementById("newSpeciesName").value = "";
+  document.getElementById("newSpeciesDensity").value = "";
+  renderSpeciesSettingsTable();
+  renderMaterialTable();
+}
+
+function deleteSpecies(id) {
+  if (DEFAULT_SPECIES.find((d) => d.id === id)) return;
+  if (!confirm("Opravdu smazat tuto dřevinu?")) return;
+  species = species.filter((s) => s.id !== id);
+  materials.forEach((m) => {
+    if (m.speciesId === id) m.speciesId = null;
+  });
+  renderSpeciesSettingsTable();
+  renderMaterialTable();
+}
+
+// ═══════════════════════════════════════════════════
 //  EXPORT HELPERS
 // ═══════════════════════════════════════════════════
 function weightIncluded() {
@@ -876,7 +1154,9 @@ function detailedPrices() {
 
 function toggleDetailedPrices() {
   const on = detailedPrices();
-  document.getElementById("ordersContainer").classList.toggle("detailed-prices", on);
+  document
+    .getElementById("ordersContainer")
+    .classList.toggle("detailed-prices", on);
   updatePriceInputPlaceholders();
 }
 
@@ -898,11 +1178,16 @@ function exportPDF() {
   const zakaz = getZakaz();
 
   // Summary totals
-  let totM3 = 0, totNoDph = 0, totWithDph = 0, totKg = 0;
+  let totM3 = 0,
+    totNoDph = 0,
+    totWithDph = 0,
+    totKg = 0;
   orders.forEach((order) => {
     const t = calcOrderTotals(order);
-    totM3 += t.m3; totNoDph += t.noDph;
-    totWithDph += t.withDph; totKg += t.kg;
+    totM3 += t.m3;
+    totNoDph += t.noDph;
+    totWithDph += t.withDph;
+    totKg += t.kg;
   });
 
   const avgPriceM3Pdf = totM3 > 0 ? totNoDph / totM3 : (mat?.price ?? 0);
@@ -911,7 +1196,8 @@ function exportPDF() {
   const S = {
     th: "padding:6px 8px;background:#f0f0f0;border-bottom:1px solid #ccc;text-align:right;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#444;font-weight:600;white-space:nowrap;",
     td: "padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-size:13px;color:#111;white-space:nowrap;",
-    tdInput: "padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-size:13px;color:#111;white-space:nowrap;",
+    tdInput:
+      "padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-size:13px;color:#111;white-space:nowrap;",
     tfTd: "padding:5px 8px;text-align:right;font-size:14px;font-weight:700;color:#111;border-top:2px solid #1d6f42;",
   };
 
@@ -920,18 +1206,20 @@ function exportPDF() {
 
   const colCount = 4 + 3 + (inclWght ? 1 : 0);
   const multiOrder = orders.length > 1;
-  const rowsHtml = orders.map((order) => {
-    const orderHeader = multiOrder
-      ? `<tr><td colspan="${colCount}" style="padding:5px 8px;font-weight:700;font-size:12px;background:#f0f0f0;border-top:1px solid #ccc;">${escHtml(order.name)}</td></tr>`
-      : "";
-    const orderRows = order.rows.map((row) => {
-      const c = calcRow(row);
-      const w = parseDecimal(row.w);
-      const h = parseDecimal(row.h);
-      const l = parseDecimal(row.l);
-      const n = parseDecimal(row.n);
-      if (w === 0 && h === 0 && l === 0 && n === 0) return "";
-      return `<tr>
+  const rowsHtml = orders
+    .map((order) => {
+      const orderHeader = multiOrder
+        ? `<tr><td colspan="${colCount}" style="padding:5px 8px;font-weight:700;font-size:12px;background:#f0f0f0;border-top:1px solid #ccc;">${escHtml(order.name)}</td></tr>`
+        : "";
+      const orderRows = order.rows
+        .map((row) => {
+          const c = calcRow(row);
+          const w = parseDecimal(row.w);
+          const h = parseDecimal(row.h);
+          const l = parseDecimal(row.l);
+          const n = parseDecimal(row.n);
+          if (w === 0 && h === 0 && l === 0 && n === 0) return "";
+          return `<tr>
         <td style="${S.tdInput}">${fmtDim(w)}</td>
         <td style="${S.tdInput}">${fmtDim(h)}</td>
         <td style="${S.tdInput}">${fmt(l, 2)}</td>
@@ -941,18 +1229,20 @@ function exportPDF() {
         <td style="${S.td}">${fmtKc(c.priceNoDph)}</td>
         <td style="${S.td}">${fmtKc(c.priceWithDph)}</td>
       </tr>`;
-    }).join("");
-    if (!multiOrder) return orderRows;
-    const ot = calcOrderTotals(order);
-    const subtotal = `<tr>
+        })
+        .join("");
+      if (!multiOrder) return orderRows;
+      const ot = calcOrderTotals(order);
+      const subtotal = `<tr>
       <td colspan="4" style="padding:4px 8px;font-size:11px;font-style:italic;color:#666;border-top:1px dashed #ccc;">Mezisoučet</td>
       <td style="${S.td};border-top:1px dashed #ccc;">${fmtM3(ot.m3)}</td>
       ${inclWght ? `<td style="${S.td};border-top:1px dashed #ccc;">${fmtKg(ot.kg)}</td>` : ""}
       <td style="${S.td};border-top:1px dashed #ccc;">${fmtKc(ot.noDph)}</td>
       <td style="${S.td};border-top:1px dashed #ccc;">${fmtKc(ot.withDph)}</td>
     </tr>`;
-    return orderHeader + orderRows + subtotal;
-  }).join("");
+      return orderHeader + orderRows + subtotal;
+    })
+    .join("");
 
   // Stat bar items matching the screen layout
   const statItem = (lbl, val, accent) => `
@@ -1020,12 +1310,15 @@ function exportPDF() {
   const filename = `kalkulacka-reziva-${dateStr.replace(/\./g, "-")}.pdf`;
 
   saveToHistory(true);
-  html2pdf().from(html).set({
-    margin: [10, 10, 10, 10],
-    filename,
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-  }).save();
+  html2pdf()
+    .from(html)
+    .set({
+      margin: [10, 10, 10, 10],
+      filename,
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    })
+    .save();
 }
 
 // ═══════════════════════════════════════════════════
@@ -1048,24 +1341,36 @@ function buildEmailText() {
   orders.forEach((order) => {
     if (orders.length > 1) body += `\n--- ${order.name} ---\n`;
     body += colHeader();
-    let oM3 = 0, oNoDph = 0, oWithDph = 0, oKg = 0;
-    order.rows.filter((row) => parseDecimal(row.w) > 0 || parseDecimal(row.n) > 0 || parseDecimal(row.l) > 0).forEach((row) => {
-      const c = calcRow(row);
-      oM3 += c.m3; oNoDph += c.priceNoDph;
-      oWithDph += c.priceWithDph; oKg += c.weight;
-      let cols = [
-        pad(parseDecimal(row.w), 9),
-        pad(parseDecimal(row.h), 9),
-        pad(parseDecimal(row.l), 8),
-        pad(parseDecimal(row.n), 7),
-        pad(fmtM3(c.m3), 10),
-      ];
-      if (inclWght) cols.push(pad(fmtKg(c.weight), 10));
-      cols.push(pad(fmtKc(c.priceNoDph), 13));
-      cols.push(pad(fmtKc(c.priceWithDph), 12));
-      let r = cols.join("  ");
-      body += r + "\n";
-    });
+    let oM3 = 0,
+      oNoDph = 0,
+      oWithDph = 0,
+      oKg = 0;
+    order.rows
+      .filter(
+        (row) =>
+          parseDecimal(row.w) > 0 ||
+          parseDecimal(row.n) > 0 ||
+          parseDecimal(row.l) > 0,
+      )
+      .forEach((row) => {
+        const c = calcRow(row);
+        oM3 += c.m3;
+        oNoDph += c.priceNoDph;
+        oWithDph += c.priceWithDph;
+        oKg += c.weight;
+        let cols = [
+          pad(parseDecimal(row.w), 9),
+          pad(parseDecimal(row.h), 9),
+          pad(parseDecimal(row.l), 8),
+          pad(parseDecimal(row.n), 7),
+          pad(fmtM3(c.m3), 10),
+        ];
+        if (inclWght) cols.push(pad(fmtKg(c.weight), 10));
+        cols.push(pad(fmtKc(c.priceNoDph), 13));
+        cols.push(pad(fmtKc(c.priceWithDph), 12));
+        let r = cols.join("  ");
+        body += r + "\n";
+      });
     if (orders.length > 1) {
       body += `Mezisoučet: ${fmtM3(oM3)}   Bez DPH: ${fmtKc(oNoDph)}   S DPH: ${fmtKc(oWithDph)}`;
       if (inclWght) body += `   ${fmtKg(oKg)}`;
@@ -1193,7 +1498,10 @@ function buildQuoteEmailText() {
         return `${label} ${w} x ${h} x ${lCm} cm - ${n} ks - ${fmt(price)},- Kč vč. DPH`;
       });
     if (lines.length) {
-      const section = orders.length > 1 ? `${order.name}:\n${lines.join("\n")}` : lines.join("\n");
+      const section =
+        orders.length > 1
+          ? `${order.name}:\n${lines.join("\n")}`
+          : lines.join("\n");
       sections.push(section);
     }
   });
@@ -1218,7 +1526,9 @@ function buildProductionOrderText() {
   let grandM3 = 0;
 
   orders.forEach((order) => {
-    const validRows = order.rows.filter((r) => parseDecimal(r.w) > 0 && parseDecimal(r.n) > 0);
+    const validRows = order.rows.filter(
+      (r) => parseDecimal(r.w) > 0 && parseDecimal(r.n) > 0,
+    );
     if (!validRows.length) return;
     if (orders.length > 1) body += `\n=== ${order.name} ===\n`;
     let orderM3 = 0;
@@ -1239,7 +1549,6 @@ function buildProductionOrderText() {
   body += `\nCelkem: ${fmtM3(grandM3)}\n`;
   return body;
 }
-
 
 // ═══════════════════════════════════════════════════
 //  HISTORY (historie výpočtů)
@@ -1266,10 +1575,12 @@ function saveToHistory(silent = false) {
     return;
   }
   const mat = getMaterial();
-  let totM3 = 0, totWithDph = 0;
+  let totM3 = 0,
+    totWithDph = 0;
   orders.forEach((order) => {
     const t = calcOrderTotals(order);
-    totM3 += t.m3; totWithDph += t.withDph;
+    totM3 += t.m3;
+    totWithDph += t.withDph;
   });
 
   const entry = {
@@ -1285,7 +1596,8 @@ function saveToHistory(silent = false) {
   };
 
   calcHistory.unshift(entry);
-  if (calcHistory.length > HISTORY_MAX) calcHistory = calcHistory.slice(0, HISTORY_MAX);
+  if (calcHistory.length > HISTORY_MAX)
+    calcHistory = calcHistory.slice(0, HISTORY_MAX);
   persistHistory();
   if (!silent) showToast("Výpočet uložen do historie.");
 }
@@ -1300,7 +1612,8 @@ function closeHistoryModal() {
 }
 
 function closeHistoryModalOutside(e) {
-  if (e.target === document.getElementById("historyModalOverlay")) closeHistoryModal();
+  if (e.target === document.getElementById("historyModalOverlay"))
+    closeHistoryModal();
 }
 
 function renderHistoryList() {
@@ -1335,19 +1648,25 @@ function restoreFromHistory(id) {
   const entry = calcHistory.find((e) => e.id === id);
   if (!entry) return;
   const label = entry.note || entry.savedAt;
-  if (!confirm(`Načíst výpočet „${label}"?\nAktuální tabulka bude přepsána.`)) return;
+  if (!confirm(`Načíst výpočet „${label}"?\nAktuální tabulka bude přepsána.`))
+    return;
 
   orders = [];
   nextOrderId = 1;
   nextRowId = 1;
   document.getElementById("ordersContainer").innerHTML = "";
 
-  const savedOrders = entry.orders
-    ?? [{ id: 1, name: entry.note || "Zakázka 1", rows: entry.rows ?? [] }];
+  const savedOrders = entry.orders ?? [
+    { id: 1, name: entry.note || "Zakázka 1", rows: entry.rows ?? [] },
+  ];
 
   savedOrders.forEach((savedOrder) => {
     const oid = nextOrderId++;
-    const order = { id: oid, name: savedOrder.name ?? `Zakázka ${oid}`, rows: [] };
+    const order = {
+      id: oid,
+      name: savedOrder.name ?? `Zakázka ${oid}`,
+      rows: [],
+    };
     orders.push(order);
     const section = createOrderSection(order);
     document.getElementById("ordersContainer").appendChild(section);
@@ -1362,7 +1681,10 @@ function restoreFromHistory(id) {
 
   updateTabIndexes();
   const inp = document.getElementById("zakazInput");
-  if (inp) { inp.value = entry.note ?? ""; onZakazChange(); }
+  if (inp) {
+    inp.value = entry.note ?? "";
+    onZakazChange();
+  }
   recalcAll();
   updatePriceInputPlaceholders();
   closeHistoryModal();
@@ -1413,6 +1735,7 @@ function initTheme() {
   calcHistory = loadHistory();
   initTheme();
   initZakaz();
+  renderSpeciesSelect();
   renderMaterialSelect();
   addOrder("Zakázka 1");
 })();
