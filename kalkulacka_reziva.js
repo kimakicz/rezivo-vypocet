@@ -580,6 +580,15 @@ function updateRowCalc(row) {
   const tdH = tr.querySelector(".td-hint");
   if (tdH) tdH.textContent = hint;
 
+  // Zvýraznění nulového/prázdného počtu kusů
+  const w = parseDecimal(row.w);
+  const h = parseDecimal(row.h);
+  const l = parseDecimal(row.l);
+  const n = parseDecimal(row.n);
+  const hasDims = w > 0 || h > 0 || l > 0;
+  const nInp = tr.querySelector('input[data-field="n"]');
+  if (nInp) nInp.classList.toggle("qty-zero", hasDims && n === 0);
+
   // Vizuální označení řádku s vlastní cenou
   tr.classList.toggle(
     "has-price-override",
@@ -1261,7 +1270,7 @@ function exportPDF() {
     </div>`;
 
   const html = `
-    <div style="width:900px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:11px;color:#111;background:#fff;color-scheme:light;">
+    <div style="width:190mm;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:11px;color:#111;background:#fff;color-scheme:light;">
 
       <!-- Hlavička firmy -->
       <div style="display:flex;justify-content:space-between;align-items:stretch;background:#1d6f42;color:#fff;border-radius:6px 6px 0 0;margin-bottom:0;">
