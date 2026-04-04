@@ -42,7 +42,7 @@ Výsledná kubatura se vypočítá automaticky: **8 cm × 16 cm × 4,5 m × 10 k
 | **💾 Uložit** | Uloží aktuální výpočet do historie |
 | **📋 Historie** | Zobrazí uložené výpočty (max. 20) |
 | **🗑 Vymazat** | Smaže všechny řádky a zakázky |
-| **⚙ Nastavení** | Otevře modal s nastavením materiálů, rozměrů, dřevin a DPH |
+| **⚙ Nastavení** | Otevře okno s nastavením materiálů, rozměrů, dřevin a DPH |
 | **🌙 / ☀** | Přepínání světlého a tmavého režimu |
 
 ---
