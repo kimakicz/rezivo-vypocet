@@ -75,15 +75,17 @@
 
             <div class="sep"></div>
 
-            <span class="lbl">Hustota</span>
+            <span class="lbl">Dřevina</span>
+            <select id="speciesSelect" onchange="onSpeciesChange()"></select>
             <input
                 type="number"
                 id="densityInput"
                 min="0"
                 step="10"
                 inputmode="numeric"
-                title="Hustota materiálu"
+                title="Vlastní hustota materiálu"
                 onchange="onDensityChange()"
+                style="display: none"
             />
             <span class="unit">kg/m³</span>
         </div>
@@ -211,6 +213,18 @@
                         />
                     </div>
                     <div class="field">
+                        <label>Dřevina</label>
+                        <select
+                            id="newSpeciesId"
+                            class="input-species"
+                            onchange="onNewSpeciesChange()"
+                        ></select>
+                    </div>
+                    <div
+                        class="field"
+                        id="newDensityField"
+                        style="display: none"
+                    >
                         <label>Hustota kg/m³</label>
                         <input
                             type="number"
@@ -238,7 +252,7 @@
                             <th>Název</th>
                             <th>Zkratka</th>
                             <th>Cena Kč/m³ bez DPH</th>
-                            <th>Hustota kg/m³</th>
+                            <th>Dřevina</th>
                             <th style="width: 34px"></th>
                         </tr>
                     </thead>
@@ -294,6 +308,38 @@
                             title="Dostupné délky v metrech, oddělené čárkou"
                         />
                         <button class="btn-primary" onclick="addSize()">
+                            + Přidat
+                        </button>
+                    </div>
+                </details>
+
+                <details class="species-details" id="speciesSection">
+                    <summary class="species-heading">Druhy dřevin</summary>
+                    <table class="species-table">
+                        <thead>
+                            <tr>
+                                <th>Název</th>
+                                <th>Hustota kg/m³</th>
+                                <th style="width: 34px"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="speciesTableBody"></tbody>
+                    </table>
+                    <div class="add-species-form">
+                        <input
+                            type="text"
+                            id="newSpeciesName"
+                            placeholder="Název dřeviny"
+                        />
+                        <input
+                            type="number"
+                            id="newSpeciesDensity"
+                            placeholder="kg/m³"
+                            min="0"
+                            step="10"
+                            style="width: 80px; text-align: right"
+                        />
+                        <button class="btn-primary" onclick="addSpecies()">
                             + Přidat
                         </button>
                     </div>

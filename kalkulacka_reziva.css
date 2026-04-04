@@ -803,6 +803,124 @@ tbody tr.has-price-override {
   box-shadow: 0 0 0 2px var(--accent-focus);
 }
 
+/* ── Species section (modal, <details>) ──────────── */
+.species-details {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.species-heading {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+.species-heading::-webkit-details-marker { display: none; }
+.species-heading::before {
+  content: "▶";
+  font-size: 10px;
+  color: var(--text-muted);
+  transition: transform .15s;
+}
+.species-details[open] > .species-heading::before {
+  transform: rotate(90deg);
+}
+
+.species-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 10px; }
+.species-table th {
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+  padding: 5px 8px;
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+.species-table tr { border-bottom: 1px solid var(--border-light); }
+.species-table tr:last-child { border-bottom: none; }
+.species-table td { padding: 3px 8px; font-size: 13px; color: var(--text-primary); }
+
+.add-species-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.add-species-form input {
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--bg-panel);
+  color: var(--text-primary);
+}
+.add-species-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-focus);
+}
+
+/* Species cell in material table */
+.species-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.species-cell select {
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  min-width: 0;
+  flex: 1;
+}
+.species-cell select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-focus);
+}
+.density-info {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Add form species select */
+.input-species {
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--bg-panel);
+  color: var(--text-primary);
+}
+.input-species:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-focus);
+}
+
 /* ── Zakázka / poznámka ──────────────────────────── */
 .zakaz-row {
   display: flex;
@@ -1125,7 +1243,8 @@ tbody tr.has-price-override {
   .modal-overlay.open { align-items: flex-end; }
   .add-form { flex-direction: column; gap: 10px; }
   .add-form .field input,
-  .input-name, .input-email-code, .input-price, .input-density { width: 100% !important; }
+  .add-form .field select,
+  .input-name, .input-email-code, .input-price, .input-density, .input-species { width: 100% !important; }
 
   /* Sizes add-form in modal */
   .add-size-form { flex-wrap: wrap; }
