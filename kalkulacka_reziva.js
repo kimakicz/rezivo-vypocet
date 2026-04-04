@@ -1295,8 +1295,8 @@ function exportPDF() {
       <div style="padding:6px 0;border-bottom:1px solid #ccc;margin-bottom:6px;">
         ${statItem("Cena za m³ bez DPH", fmt(Math.round(avgPriceM3Pdf)) + "\u00a0Kč", false)}
         ${statItem("Celkem m³", fmtM3(totM3), false)}
-        ${statItem("Celkem bez DPH", fmtKc(totNoDph), false)}
         ${inclWght ? statItem("Celková hmotnost", fmtKg(totKg), false) : ""}
+        ${statItem("Celkem bez DPH", fmtKc(totNoDph), false)}
         ${statItem("Celkem s DPH", fmtKc(totWithDph), true)}
       </div>
 
