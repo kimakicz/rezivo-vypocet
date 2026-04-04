@@ -1329,28 +1329,15 @@ function exportPDF() {
 
   saveToHistory(true);
 
-  // Vytvořit dočasný element mimo viewport pro spolehlivý render na mobilu
-  const wrap = document.createElement("div");
-  wrap.style.cssText = "position:absolute;left:-9999px;top:0;width:794px;overflow:visible;";
-  wrap.innerHTML = html;
-  document.body.appendChild(wrap);
-
   html2pdf()
-    .from(wrap)
+    .from(html)
     .set({
       margin: [10, 10, 10, 10],
       filename,
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        windowWidth: 794,
-        scrollY: 0,
-      },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", scrollY: 0 },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     })
-    .save()
-    .then(() => wrap.remove());
+    .save();
 }
 
 // ═══════════════════════════════════════════════════
