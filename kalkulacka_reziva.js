@@ -604,8 +604,8 @@ function clearAll() {
   nextOrderId = 1;
   nextRowId = 1;
   document.getElementById("ordersContainer").innerHTML = "";
-  const zakInp = document.getElementById("zakazInput");
-  if (zakInp) { zakInp.value = ""; onZakazChange(); }
+  const inp = document.getElementById("zakazInput");
+  if (inp) { inp.value = ""; onZakazChange(); }
   addOrder("Zakázka 1");
 }
 
