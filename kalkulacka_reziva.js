@@ -1337,6 +1337,7 @@ function exportPDF() {
         scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
+        windowWidth: 794,
       },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     })
