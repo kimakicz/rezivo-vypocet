@@ -4,13 +4,14 @@
 const BSH_SI_ID = 3;
 
 const DEFAULT_MATERIALS = [
-  { id: 1, name: "Stavební řezivo", price: 11500, density: 850 },
+  { id: 1, name: "Stavební řezivo", price: 11500, density: 850, speciesId: 1 },
   {
     id: 2,
     name: "KVH hranoly",
     price: 16500,
     density: 450,
     emailCode: "KVH NSi",
+    speciesId: 2,
     sizes: [
       { w: 4, h: 6, lengths: [3, 4, 5] },
       { w: 4, h: 8, lengths: [3, 4, 5] },
@@ -59,6 +60,7 @@ const DEFAULT_MATERIALS = [
     price: 23000,
     density: 450,
     emailCode: "BSH Si",
+    speciesId: 2,
   },
 ];
 
@@ -102,6 +104,7 @@ function migrateMaterials(mats) {
     if (!def) return;
     if (def.emailCode && !m.emailCode) m.emailCode = def.emailCode;
     if (def.sizes && !m.sizes) m.sizes = JSON.parse(JSON.stringify(def.sizes));
+    if (def.speciesId !== undefined && m.speciesId === undefined) m.speciesId = def.speciesId;
   });
   // Přidej default materiály které v uložených datech chybí
   DEFAULT_MATERIALS.forEach((def) => {
