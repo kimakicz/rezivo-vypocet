@@ -1260,7 +1260,7 @@ function exportPDF() {
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:11px;color:#111;background:#fff;color-scheme:light;">
 
       <!-- Hlavička firmy -->
-      <div style="display:flex;justify-content:space-between;align-items:stretch;background:#1d6f42;color:#fff;border-radius:6px 6px 0 0;margin-bottom:0;overflow:hidden;">
+      <div style="display:flex;justify-content:space-between;align-items:stretch;background:#1d6f42;color:#fff;border-radius:6px 6px 0 0;margin-bottom:0;">
         <div style="padding:12px 16px;">
           <div style="font-size:18px;font-weight:800;letter-spacing:-.02em;line-height:1.1;">SAMYCO</div>
           <div style="font-size:11px;font-weight:500;opacity:.9;margin-top:2px;">Rudolf Houfek</div>
@@ -1320,7 +1320,7 @@ function exportPDF() {
     .set({
       margin: [10, 10, 10, 10],
       filename,
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: 900 },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     })
     .save();
