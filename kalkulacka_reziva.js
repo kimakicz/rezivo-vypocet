@@ -356,7 +356,7 @@ function buildSpeciesOptions(selectedId) {
   let html = "";
   species.forEach((sp) => {
     const sel = sp.id === selectedId ? " selected" : "";
-    html += `<option value="${sp.id}"${sel}>${escHtml(sp.name)} (${sp.density})</option>`;
+    html += `<option value="${sp.id}"${sel}>${escHtml(sp.name)}</option>`;
   });
   const customSel = selectedId == null ? " selected" : "";
   html += `<option value="custom"${customSel}>Vlastní…</option>`;
