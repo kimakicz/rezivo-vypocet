@@ -1093,6 +1093,7 @@ tbody tr.has-price-override {
   background: var(--bg-subtle);
   border-top: 1px solid var(--accent);
   padding: 4px 10px;
+  text-align: right;
 }
 .order-subtotal td:first-child {
   text-align: left;
