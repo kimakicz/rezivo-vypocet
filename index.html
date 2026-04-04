@@ -12,7 +12,14 @@
         <div class="app-header no-print">
             <h1>Kalkulačka řeziva</h1>
             <span class="subtitle">kubatura · ceny · hmotnost</span>
-            <button class="btn-ghost no-print" id="btnSettings" onclick="openSettings()" title="Nastavení">⚙ Nastavení</button>
+            <button
+                class="btn-ghost no-print"
+                id="btnSettings"
+                onclick="openSettings()"
+                title="Nastavení"
+            >
+                ⚙ Nastavení
+            </button>
             <button
                 class="btn-theme no-print"
                 id="themeToggle"
@@ -33,13 +40,13 @@
                 <span class="s-lbl">Celkem m³</span>
                 <span class="s-val" id="sumM3">0,000 m³</span>
             </div>
-            <div class="stat-item">
-                <span class="s-lbl">Celkem bez DPH</span>
-                <span class="s-val" id="sumNoDph">0 Kč</span>
-            </div>
             <div class="stat-item sum-weight">
                 <span class="s-lbl">Celková hmotnost</span>
                 <span class="s-val" id="sumWeight">0 kg</span>
+            </div>
+            <div class="stat-item">
+                <span class="s-lbl">Celkem bez DPH</span>
+                <span class="s-val" id="sumNoDph">0 Kč</span>
             </div>
             <div class="stat-item">
                 <span class="s-lbl">Celkem s DPH</span>
@@ -79,13 +86,19 @@
                 onchange="onDensityChange()"
             />
             <span class="unit">kg/m³</span>
-
         </div>
 
         <div class="container">
             <!-- ── Print metadata ── -->
             <div class="print-meta print-only">
-                <div id="printZakaz" style="font-size:13px;font-weight:600;margin-bottom:4px;"></div>
+                <div
+                    id="printZakaz"
+                    style="
+                        font-size: 13px;
+                        font-weight: 600;
+                        margin-bottom: 4px;
+                    "
+                ></div>
                 <strong>Materiál:</strong>
                 <span id="printMaterial"></span>&emsp;
                 <strong>Cena za m³ bez DPH:</strong>
@@ -96,7 +109,9 @@
 
             <!-- ── Zakázka / poznámka ── -->
             <div class="zakaz-row no-print">
-                <label class="zakaz-label" for="zakazInput">Zakázka / zákazník</label>
+                <label class="zakaz-label" for="zakazInput"
+                    >Zakázka / zákazník</label
+                >
                 <input
                     type="text"
                     id="zakazInput"
@@ -134,8 +149,16 @@
                     <input type="checkbox" id="chkWeight" checked /> Zahrnout
                     hmotnost
                 </label>
-                <label class="export-opt" title="Zobrazí sloupec pro zadání vlastní ceny Kč/m³ na každý řádek">
-                    <input type="checkbox" id="chkDetailedPrices" onchange="toggleDetailedPrices()" /> Vlastní cena na řádek
+                <label
+                    class="export-opt"
+                    title="Zobrazí sloupec pro zadání vlastní ceny Kč/m³ na každý řádek"
+                >
+                    <input
+                        type="checkbox"
+                        id="chkDetailedPrices"
+                        onchange="toggleDetailedPrices()"
+                    />
+                    Vlastní cena na řádek
                 </label>
             </div>
         </div>
@@ -194,10 +217,12 @@
                             id="newDensity"
                             placeholder="550"
                             min="0"
-                            step="10"mmm
+                            step="10"
+                            mmm
                             class="input-density"
                         />
-                    </div>bb
+                    </div>
+                    bb
                     <button
                         class="btn-primary"
                         onclick="addMaterial()"
@@ -331,10 +356,18 @@
 
                 <div class="modal-footer email-modal-footer">
                     <span class="copy-status" id="copyStatus"></span>
-                    <button class="btn-action" id="btnCopy" onclick="copyEmailText()">
+                    <button
+                        class="btn-action"
+                        id="btnCopy"
+                        onclick="copyEmailText()"
+                    >
                         📋 Kopírovat
                     </button>
-                    <button class="btn-action" id="btnMailto" onclick="openEmailMailto()">
+                    <button
+                        class="btn-action"
+                        id="btnMailto"
+                        onclick="openEmailMailto()"
+                    >
                         ✉ Otevřít v emailu
                     </button>
                     <button class="btn-primary" onclick="closeEmailModal()">
