@@ -467,6 +467,8 @@ function clearAll() {
   nextOrderId = 1;
   nextRowId = 1;
   document.getElementById("ordersContainer").innerHTML = "";
+  const inp = document.getElementById("zakazInput");
+  if (inp) { inp.value = ""; onZakazChange(); }
   addOrder("Zakázka 1");
 }
 
