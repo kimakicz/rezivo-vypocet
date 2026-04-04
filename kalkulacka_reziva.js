@@ -1304,11 +1304,6 @@ function exportPDF() {
       <div style="margin-bottom:10px;">
         ${zakaz ? `<div style="font-size:13px;font-weight:600;color:#333;margin-bottom:3px;">${escHtml(zakaz)}</div>` : ""}
         <div style="font-size:16px;font-weight:700;color:#1d6f42;letter-spacing:-.01em;margin-bottom:4px;">${escHtml(mat?.name ?? "")}</div>
-        <div style="font-size:10px;color:#666;">
-          <strong style="color:#444;">Cena za m³ bez DPH:</strong> ${fmt(Math.round(avgPriceM3Pdf))} Kč &emsp;
-          <strong style="color:#444;">DPH:</strong> ${dph} % &emsp;
-          <strong style="color:#444;">Datum:</strong> ${dateStr}
-        </div>
       </div>
 
       <!-- Table -->
@@ -1323,6 +1318,11 @@ function exportPDF() {
           ${tfTd(fmtM3(totM3))}${inclWght ? tfTd(fmtKg(totKg)) : ""}${tfTd(fmtKc(totNoDph))}${tfTd(fmtKc(totWithDph))}
         </tr></tfoot>
       </table>
+
+      <!-- Patička -->
+      <div style="margin-top:16px;padding-top:8px;border-top:1px solid #eee;font-size:10px;color:#999;text-align:right;">
+        Datum: ${dateStr}
+      </div>
     </div>`;
 
   const filename = `kalkulacka-reziva-${dateStr.replace(/\./g, "-")}.pdf`;
