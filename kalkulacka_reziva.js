@@ -1270,7 +1270,7 @@ function exportPDF() {
     </div>`;
 
   const html = `
-    <div style="width:190mm;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:11px;color:#111;background:#fff;color-scheme:light;">
+    <div style="width:718px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:11px;color:#111;background:#fff;color-scheme:light;">
 
       <!-- Hlavička firmy -->
       <div style="display:flex;justify-content:space-between;align-items:stretch;background:#1d6f42;color:#fff;border-radius:6px 6px 0 0;margin-bottom:0;">
