@@ -1328,8 +1328,15 @@ function exportPDF() {
   const filename = `kalkulacka-reziva-${dateStr.replace(/\./g, "-")}.pdf`;
 
   saveToHistory(true);
+
+  // Vytvořit dočasný element mimo viewport pro spolehlivý render na mobilu
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "position:absolute;left:-9999px;top:0;width:794px;overflow:visible;";
+  wrap.innerHTML = html;
+  document.body.appendChild(wrap);
+
   html2pdf()
-    .from(html)
+    .from(wrap)
     .set({
       margin: [10, 10, 10, 10],
       filename,
@@ -1338,10 +1345,12 @@ function exportPDF() {
         useCORS: true,
         backgroundColor: "#ffffff",
         windowWidth: 794,
+        scrollY: 0,
       },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     })
-    .save();
+    .save()
+    .then(() => wrap.remove());
 }
 
 // ═══════════════════════════════════════════════════
