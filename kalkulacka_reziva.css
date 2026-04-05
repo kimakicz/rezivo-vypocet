@@ -558,6 +558,9 @@ tbody td.td-del {
     border-radius: 3px;
     margin-bottom: 14px;
 }
+.add-form > .btn-primary {
+    align-self: flex-end;
+}
 
 .add-form .field {
     display: flex;
@@ -1438,13 +1441,30 @@ tbody tr.has-price-override {
         font-size: 15px;
     }
 
-    /* Toolbar – hide decorative separators, let groups wrap */
+    /* Toolbar – strukturované řádky na mobilu */
     .toolbar {
-        padding: 8px 12px;
-        gap: 8px 10px;
+        padding: 10px 12px;
+        gap: 6px 8px;
     }
     .toolbar .sep {
-        display: none;
+        flex-basis: 100%;
+        height: 0;
+        margin: 0;
+        background: none;
+    }
+    .toolbar .lbl {
+        min-width: 80px;
+    }
+    .toolbar select {
+        min-width: 0;
+        flex: 1 1 0;
+    }
+    .toolbar input[type="number"] {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+    .toolbar .unit {
+        margin-left: 0;
     }
 
     /* Stat bar – 2-column grid */
@@ -1497,8 +1517,10 @@ tbody tr.has-price-override {
         font-size: 16px !important;
     }
 
-    /* Action bar – bigger buttons */
+    /* Action bar – grid layout */
     .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         gap: 8px;
     }
     .btn-primary,
@@ -1514,6 +1536,7 @@ tbody tr.has-price-override {
         min-height: 36px;
     }
     .export-opt {
+        grid-column: 1 / -1;
         font-size: 13px;
         margin-left: 2px;
     }
@@ -1566,22 +1589,75 @@ tbody tr.has-price-override {
         overscroll-behavior: contain;
     }
 
-    /* Footer – pevný dole + safe area pro iPhone */
+    /* Footer – pevný dole + odsazení od spodu */
     .modal-footer {
         flex-shrink: 0;
         margin: 0 -16px;
-        padding: 12px 16px env(safe-area-inset-bottom, 12px);
+        padding: 12px 16px max(20px, env(safe-area-inset-bottom, 20px));
         border-top: 1px solid var(--border);
     }
 
-    /* Email textarea – menší na mobilu */
+    /* Email modal – vyšší */
+    #emailModal {
+        max-height: 94vh;
+        height: 94vh;
+    }
+
+    /* Email textarea – vyšší, vyplní prostor */
     .email-textarea {
-        height: 140px;
+        min-height: 180px;
+        height: auto;
+        flex: 1 1 auto;
+    }
+
+    /* Email modal body – flex pro roztažení textarea */
+    #emailModal .modal-body {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Email formát – select na plnou šířku */
+    .email-format-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    /* Email footer – zalamování tlačítek */
+    .email-modal-footer {
+        flex-wrap: wrap;
+    }
+    .email-modal-footer .btn-action,
+    .email-modal-footer .btn-primary {
+        flex: 1 1 auto;
+    }
+    .email-modal-footer .copy-status {
+        width: 100%;
+        text-align: center;
+    }
+
+    /* Tabulka materiálů – skrýt Zkratku, název širší */
+    .mat-table th:nth-child(2),
+    .mat-table td:nth-child(2) {
+        display: none;
+    }
+    .mat-table {
+        table-layout: fixed;
+    }
+    .mat-table th:first-child,
+    .mat-table td:first-child {
+        width: 45%;
+    }
+    .mat-table th:last-child,
+    .mat-table td:last-child {
+        width: 34px;
     }
 
     .add-form {
         flex-direction: column;
         gap: 10px;
+    }
+    .add-form .field {
+        width: 100%;
     }
     .add-form .field input,
     .add-form .field select,
@@ -1592,14 +1668,21 @@ tbody tr.has-price-override {
     .input-species {
         width: 100% !important;
     }
+    .add-form > .btn-primary {
+        align-self: stretch;
+        width: 100%;
+    }
 
     /* Sizes add-form in modal */
     .add-size-form {
-        flex-wrap: wrap;
+        flex-direction: column;
+        gap: 8px;
     }
     .add-size-form input {
-        flex: 1 1 80px;
-        width: auto !important;
+        width: 100% !important;
+    }
+    .add-size-form .btn-primary {
+        width: 100%;
     }
 
     /* Zakázka */
