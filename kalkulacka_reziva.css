@@ -558,6 +558,9 @@ tbody td.td-del {
     border-radius: 3px;
     margin-bottom: 14px;
 }
+.add-form > .btn-primary {
+    align-self: flex-end;
+}
 
 .add-form .field {
     display: flex;
@@ -1497,8 +1500,10 @@ tbody tr.has-price-override {
         font-size: 16px !important;
     }
 
-    /* Action bar – bigger buttons */
+    /* Action bar – grid layout */
     .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         gap: 8px;
     }
     .btn-primary,
@@ -1514,6 +1519,7 @@ tbody tr.has-price-override {
         min-height: 36px;
     }
     .export-opt {
+        grid-column: 1 / -1;
         font-size: 13px;
         margin-left: 2px;
     }
@@ -1574,14 +1580,63 @@ tbody tr.has-price-override {
         border-top: 1px solid var(--border);
     }
 
-    /* Email textarea – menší na mobilu */
+    /* Email modal – celá výška */
+    #emailModal {
+        max-height: 100vh;
+        height: 100vh;
+        border-radius: 0;
+    }
+
+    /* Email textarea – vyšší, vyplní prostor */
     .email-textarea {
-        height: 140px;
+        min-height: 180px;
+        height: auto;
+        flex: 1 1 auto;
+    }
+
+    /* Email modal body – flex pro roztažení textarea */
+    #emailModal .modal-body {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Email formát – select na plnou šířku */
+    .email-format-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    /* Email footer – zalamování tlačítek + odsazení od spodu */
+    .email-modal-footer {
+        flex-wrap: wrap;
+        padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+    }
+    .email-modal-footer .btn-action,
+    .email-modal-footer .btn-primary {
+        flex: 1 1 auto;
+    }
+    .email-modal-footer .copy-status {
+        width: 100%;
+        text-align: center;
+    }
+
+    /* Settings footer – odsazení od spodu */
+    .settings-footer {
+        padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+    }
+
+    /* Tabulka materiálů – Název širší */
+    .mat-table th:first-child,
+    .mat-table td:first-child {
+        width: 40%;
     }
 
     .add-form {
         flex-direction: column;
         gap: 10px;
+    }
+    .add-form .field {
+        width: 100%;
     }
     .add-form .field input,
     .add-form .field select,
@@ -1592,14 +1647,21 @@ tbody tr.has-price-override {
     .input-species {
         width: 100% !important;
     }
+    .add-form > .btn-primary {
+        align-self: stretch;
+        width: 100%;
+    }
 
     /* Sizes add-form in modal */
     .add-size-form {
-        flex-wrap: wrap;
+        flex-direction: column;
+        gap: 8px;
     }
     .add-size-form input {
-        flex: 1 1 80px;
-        width: auto !important;
+        width: 100% !important;
+    }
+    .add-size-form .btn-primary {
+        width: 100%;
     }
 
     /* Zakázka */
