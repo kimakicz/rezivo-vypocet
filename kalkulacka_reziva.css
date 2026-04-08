@@ -730,7 +730,8 @@ tbody td.td-del {
 
 .email-textarea {
     width: 100%;
-    height: 200px;
+    min-height: 200px;
+    flex: 1 1 auto;
     resize: vertical;
     font-family: monospace;
     font-size: 12px;
@@ -758,6 +759,19 @@ tbody td.td-del {
 .btn-copied {
     background: var(--accent) !important;
     color: #fff !important;
+}
+
+/* ── Email modal – desktop: vyšší, textarea vyplní prostor ── */
+#emailModal {
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+#emailModal .modal-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    overflow-y: auto;
 }
 
 /* ── Dostupnost rozměrů (avail-ok / avail-no) ───── */
